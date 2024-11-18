@@ -7,6 +7,8 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import math as math
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
@@ -19,7 +21,7 @@ batch_size = 512
 train_loader = DataLoader(trainset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(testset, batch_size=batch_size)
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+#device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def beta_cosine_schedule(timesteps, beta_start=1e-4, beta_end=0.02):
     betas = torch.linspace(0, 1, timesteps)
