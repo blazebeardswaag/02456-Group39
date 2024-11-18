@@ -144,5 +144,5 @@ def train_model(model, optimizer, train_loader, num_epochs):
     # Save model
     torch.save(model.state_dict(), 'model.pth')
 
-train_model(model, optimizer, train_loader, 50)
+train_model(model, optimizer, train_loader, 2)
 
