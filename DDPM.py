@@ -30,7 +30,7 @@ def beta_cosine_schedule(timesteps, beta_start=1e-4, beta_end=0.02):
 timesteps = 3000
 betas = beta_cosine_schedule(timesteps)
 alphas = 1.0 - betas
-alphas_cumprod = torch.cumprod(alphas, axis=0)
+alphas_cumprod = torch.cumprod(alphas, axis=0).to(device)
 
 # Forward Diffusion Process
 def sample_forward(x0, t_int, noise):
