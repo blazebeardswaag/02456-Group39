@@ -21,11 +21,12 @@ test_loader = DataLoader(testset, batch_size=batch_size)
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def beta_schedule(timesteps, beta_start=1e-4, beta_end=0.02):
-    return torch.linspace(beta_start, beta_end, timesteps)
+def beta_cosine_schedule(timesteps, beta_start=1e-4, beta_end=0.02):
+    betas = torch.linspace(0, 1, timesteps)
+    return beta_start + 0.5 * (beta_end - beta_start) * (1 + torch.cos(math.pi * betas))
 
-timesteps = 1000
-betas = beta_schedule(timesteps)
+timesteps = 3000
+betas = beta_cosine_schedule(timesteps)
 alphas = 1.0 - betas
 alphas_cumprod = torch.cumprod(alphas, axis=0)
 
@@ -90,7 +91,6 @@ class ScoreNetwork0(nn.Module):
         ])
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        # x: (batch_size, 1, 28, 28), t: (batch_size, 1)
         tt = t.view(-1, 1, 1, 1).expand(-1, 1, x.size(2), x.size(3))
         x2t = torch.cat((x, tt), dim=1)
         signal = x2t
@@ -108,7 +108,7 @@ class ScoreNetwork0(nn.Module):
         return signal
     
 model = ScoreNetwork0().to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=1e-5)
 
 # Training Function
 def train_model(model, optimizer, train_loader, num_epochs):
@@ -141,5 +141,8 @@ def train_model(model, optimizer, train_loader, num_epochs):
             loss.backward()
             optimizer.step()
         print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {loss.item():.4f}")
+    # Save model
+    torch.save(model.state_dict(), 'model.pth')
 
-trained_model = train_model(model, optimizer, train_loader, 50)
+train_model(model, optimizer, train_loader, 50)
+
