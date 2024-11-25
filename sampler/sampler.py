@@ -7,8 +7,8 @@ class Sampler:
         self.config = config 
         self.dim = self.config.DIM
         self.batch_size = batch_size
-        assert config['scheduler_type'] in ["linear", "cosine"], "Scheduler type must be either linear or cosine"
-        self.scheduler_type = config['scheduler_type']
+        #assert config['scheduler_type'] in ["linear", "cosine"], "Scheduler type must be either linear or cosine"
+        self.scheduler_type = "linear"
             
     def sample_time_step(self):
         t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size,1))
@@ -23,6 +23,11 @@ class Sampler:
 
         alpha_t = 1 - beta_t
         return alpha_t
+
+    def linear_beta_schedueler(self, step):
+        d = (0.02 - 10**(-4))/(1000) 
+        b_t = 10**(-4) + step * d 
+        return b_t
 
     def get_alpha_bar_t(self, t_tensor):
 

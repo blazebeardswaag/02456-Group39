@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from torchvision import datasets, transforms
 from torch.utils import data
-import tensorflow as tf
+#import tensorflow as tf
 #import tensorflow_gan as tfgan
 from PIL import Image
 import math

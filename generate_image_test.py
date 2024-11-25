@@ -7,7 +7,7 @@ from PIL import Image
 from torchvision.transforms import Normalize
 from utils.image_saver import ImageSaver
 
-sampler = Sampler(Config, 1)
+sampler = Sampler(Config, 1, "linear")
 image_generator = ImageGenerator()
 PATH = "model_serialzed"
 model = ScoreNetwork0()
