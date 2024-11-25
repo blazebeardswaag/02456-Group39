@@ -11,7 +11,7 @@
     "device": null,
     "training_losses": [],
     "experiment_name": "mnist_training",
-    "timestamp": "20241125_021511",
+    "timestamp": "20241125_143559",
     "patience": 5,
     "min_delta": 0.01,
     "monitor": "loss",

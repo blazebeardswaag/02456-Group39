@@ -15,10 +15,11 @@ from data.preprocessor.data_handler import load_MNIST_dataset
 
 
 with context_manager(
-    batch_size=1000,
+    batch_size=64,
     LR=1e-4,
     experiment_name="mnist_training",
-    scheduler_type="linear"
+    scheduler_type="linear",
+    device="cuda"
 ) as config: 
 
     train_loader = load_MNIST_dataset(config.batch_size)

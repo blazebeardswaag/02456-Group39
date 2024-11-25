@@ -3,7 +3,7 @@ import torch.nn as nn
 from .image_generator import ImageGenerator
 from utils.helpers import linear_beta_schedueler, cosine_beta_scheduler
 class Sampler:
-    def __init__(self, config, batch_size, scheduler_type="linear"):
+    def __init__(self, config, batch_size):
         self.config = config 
         self.dim = self.config.DIM
         self.batch_size = batch_size
