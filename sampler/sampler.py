@@ -9,7 +9,7 @@ class Sampler:
         self.batch_size = batch_size
         assert config['scheduler_type'] in ["linear", "cosine"], "Scheduler type must be either linear or cosine"
         self.scheduler_type = config['scheduler_type']
-        
+            
     def sample_time_step(self):
         t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size,1))
         return t 
