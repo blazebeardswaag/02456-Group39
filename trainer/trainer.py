@@ -8,19 +8,19 @@ from sampler.image_generator import ImageGenerator
 from utils.image_saver import ImageSaver
 import os
 
-### TODO: Use EarlyStopping and train until convergance
+### TODO: 
 
 class Trainer(nn.Module):
     def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
         super().__init__()
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=lr)
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr)
         self.loss = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
         self.image_saver = ImageSaver()
-        self.save_frequency = 100  
+        self.save_frequency = 100
 
     def compute_loss(self, gen_noise, predicted_noise):
         return self.loss(gen_noise, predicted_noise)  
@@ -54,6 +54,10 @@ class Trainer(nn.Module):
         return loss.item()
 
     def train(self, data_loader, num_epochs):
+        self.config.num_epochs = num_epochs
+        self.config.batch_size = data_loader.batch_size
+        self.config.device = str(next(self.unet.parameters()).device)
+        
         for epoch in range(num_epochs):
             epoch_loss = 0.0 
             for batch_idx, batch in enumerate(data_loader):

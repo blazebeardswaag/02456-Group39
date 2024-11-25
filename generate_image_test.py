@@ -31,13 +31,10 @@ for image_idx in range(15):
         for t in range(1000, 1 , -1):
             print(f"constructing image {image_idx + 1} at timestep: {t}", end='\r')
             t_tensor = torch.tensor([t]).unsqueeze(0)
-            
             eps_theta = model(x_t.view(1, -1), t_tensor)
-            
             alpha_t = sampler.get_alpha(t_tensor)
             alpha_bar_t = sampler.get_alpha_bar_t(t_tensor)
             beta_t = sampler.linear_beta_schedueler(t_tensor)
-
             z = torch.randn_like(x_t) if t > 1 else 0
 
             x_t = image_generator.reconstruct_image(

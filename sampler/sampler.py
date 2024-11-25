@@ -1,32 +1,26 @@
 import torch 
 import torch.nn as nn
 from .image_generator import ImageGenerator
-
+from utils.helpers import linear_beta_schedueler, cosine_beta_scheduler
 class Sampler:
-    def __init__(self, config, batch_size):
+    def __init__(self, config, batch_size, scheduler_type="linear"):
         self.config = config 
         self.dim = self.config.DIM
         self.batch_size = batch_size
-
+        assert config['scheduler_type'] in ["linear", "cosine"], "Scheduler type must be either linear or cosine"
+        self.scheduler_type = config['scheduler_type']
         
     def sample_time_step(self):
         t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size,1))
         return t 
     
-    def generate_noisy_image(self,t, image):
-        noisy_image, generated_noise = self.sampler.add_noise(image, t)
-        return noisy_image, generated_noise
+    def get_alpha(self, step):
 
-    def sample_epsilon(self, xT):
-        eps = torch.normal(mean=0.0, std=1.0, size=xT)
-        return eps    
-    
-    def sample_gaussian(self, xT):
-        eps = torch.normal(mean=0.0, std=1.0, size=xT)
-        return eps    
+        if self.scheduler_type == "linear":
+            beta_t = linear_beta_schedueler(step)
+        elif self.scheduler_type == "cosine":
+            beta_t = cosine_beta_scheduler(step)
 
-    def get_alpha(self, t):
-        beta_t = self.linear_beta_schedueler(t)
         alpha_t = 1 - beta_t
         return alpha_t
 
@@ -40,17 +34,5 @@ class Sampler:
             alpha_bar_t = alphas.prod()
             alpha_bar_results.append(alpha_bar_t)
         return torch.stack(alpha_bar_results)
-
-    def linear_beta_schedueler(self, step):
-        d = (0.02 - 10**(-4))/(1000) 
-        b_t = 10**(-4) + step * d 
-        return b_t
-
-class NoiseSchedueler: 
-    def __init__(self):
-        pass 
-
-    def linear_beta_schedueler(self, step):
-        d = (0.02 - 10**(-4))/(1000) 
-        b_t = 10**(-4) + step * d 
-        return b_t
+   
+   
