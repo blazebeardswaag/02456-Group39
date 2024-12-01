@@ -22,6 +22,7 @@ with context_manager(
     device="cuda"
 ) as config: 
 
+    wandb.init(project=wandb_project, entity=wandb_entity)
     train_loader = load_MNIST_dataset(config.batch_size)
     sampler = Sampler(config, config.batch_size)
     unet_model = UNet()
