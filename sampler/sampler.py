@@ -7,7 +7,9 @@ class Sampler:
         self.config = config
         self.dim = self.config.DIM
         self.batch_size = batch_size
-        self.scheduler_type = "linear"
+        self.scheduler_type = config.scheduler_type 
+    
+        assert self.scheduler_type in ["cosine", "linear"], f"schedueler type must either be cosine or linear"
 
     def sample_time_step(self):
 
@@ -42,6 +44,7 @@ class Sampler:
 
             alpha_bar_t = alphas.prod()
             alpha_bar_results.append(alpha_bar_t)
+            
         return torch.stack(alpha_bar_results).to(self.config.device)
    
    
