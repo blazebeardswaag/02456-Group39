@@ -106,10 +106,9 @@ def train_mnist_classifier():
     """
     Trains the classifier on the MNIST dataset and saves the weights.
     """
-    # Load MNIST dataset
     (x_train, y_train), (_, _) = tf.keras.datasets.mnist.load_data()
     x_train = x_train.astype('float32') / 255.0
-    x_train = np.expand_dims(x_train, axis=-1)  # Add channel dimension
+    x_train = np.expand_dims(x_train, axis=-1)
 
     model = create_mnist_classifier_for_training()
 
@@ -118,7 +117,6 @@ def train_mnist_classifier():
                   metrics=['accuracy'])
 
     model.fit(x_train, y_train, epochs=5)
-    # Save weights
     model.save_weights('mnist_classifier_weights.h5')
 
 def classifier_fn(images):
@@ -131,14 +129,12 @@ def classifier_fn(images):
     return activations
 
 def main():
-    # Step 1: Train classifier if weights do not exist
     if not os.path.exists('mnist_classifier_weights.h5'):
         logger.info('Training MNIST classifier...')
         train_mnist_classifier()
     else:
         logger.info('MNIST classifier weights found.')
 
-    # Step 2: Compute activations of real images if not exist
     if not os.path.exists('./data/mnist/activations_real.npy'):
         logger.info('Computing activations of real images...')
         activations_real = compute_activations(load_mnist(), num_batches=1, classifier_fn=classifier_fn)
@@ -148,14 +144,12 @@ def main():
         activations_real = np.load('./data/mnist/activations_real.npy')
         activations_real = tf.convert_to_tensor(activations_real, dtype=tf.float32)
 
-    # Step 3: Load generated images and compute activations
-    epoch_dir = './generated_images'  # Ensure this directory contains your generated images
+    epoch_dir = './generated_images'
     logger.info(f"Loading images from {epoch_dir}")
     epoch_images = pack_images_to_tensor(path=epoch_dir)
     logger.info("Computing activations of generated images")
     activation_fake = compute_activations(epoch_images, num_batches=1, classifier_fn=classifier_fn)
 
-    # Step 4: Compute FID
     logger.info("Computing FID")
     fid = tfgan.eval.frechet_classifier_distance_from_activations(
         activations_real, activation_fake
