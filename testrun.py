@@ -11,7 +11,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import Subset
 from configs.config_manager import context_manager
 from data.preprocessor.data_handler import load_MNIST_dataset
-
+import wandb
 
 
 with context_manager(
@@ -22,7 +22,8 @@ with context_manager(
     device="cuda"
 ) as config: 
 
-    wandb.init(project=wandb_project, entity=wandb_entity)
+    wandb.init(project="test_run")
+    print(config.device)
     train_loader = load_MNIST_dataset(config.batch_size)
     sampler = Sampler(config, config.batch_size)
     unet_model = UNet()
