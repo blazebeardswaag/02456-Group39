@@ -13,36 +13,34 @@ from configs.config_manager import context_manager
 from data.preprocessor.data_handler import load_MNIST_dataset
 import wandb
 import argparse
+import pprint
+
+
+def train(config=None):
+    with wandb.init(
+        project='default_project',
+        config = config,
+        resume="allow"
+    ):
+        config = wandb.config
+        print(f"config: {config}")
+        
+
+        train_loader = load_MNIST_dataset(config.batch_size)
+        sampler = Sampler(old_config, config.batch_size, config.scheduler_type, config.MAX_STEPS)
+        unet_model = UNet().to(old_config.device)  # Model moved to GPU
+        image_generator = ImageGenerator(sampler, old_config.device)
+        trainer = Trainer(unet=unet_model, config=old_config, sweep_config=config, sampler=sampler, image_generator=image_generator)
+        trainer.train(train_loader, num_epochs=config.num_epochs)
 
 
 with context_manager(
-    batch_size=1024,
-    LR=1e-3,
-    experiment_name="mnist_training",
-    scheduler_type="linear",
-    use_wandb=True,
+    experiment_name="mnist_training"
+) as old_config:
 
-    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-) as config:
-    print("loading data")
+    #print(f"config.sweep_config: {config.sweep_config}")
+    #pprint.pprint(config.sweep_config)
+    #print(config['parameters'])
+    sweep_id = wandb.sweep(old_config.sweep_config, project="default_project")
 
-    train_loader = load_MNIST_dataset(config.batch_size)
-    print("sampling data")
-    sampler = Sampler(config, config.batch_size)
-    unet_model = UNet().to(config.device)  # Model moved to GPU
-    print(f"Model device: {next(unet_model.parameters()).device}")
-    image_generator = ImageGenerator(sampler, config.device)
-    trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
-    print("training")
-    trainer.train(train_loader, num_epochs=75)
-    print("done training")
-
-
-
-    # Inputs 
-    # 1) data name
-    # batch size 
-    # LR
-    # schedueler
-    # steps 
-    
+    wandb.agent(sweep_id, train, count=5)
