@@ -1,17 +1,18 @@
 {
-    "LR": 0.01,
+    "LR": 0.001,
     "MAX_STEPS": 1000,
     "DIM": [
         28,
         28
     ],
     "MODEL_OUTPUT_PATH": "./model_serialzed",
-    "batch_size": 96,
+    "use_wandb": true,
+    "batch_size": 50,
     "num_epochs": 75,
-    "device": "cuda",
+    "device": "cpu",
     "training_losses": [],
     "experiment_name": "mnist_training",
-    "timestamp": "20241202_150832",
+    "timestamp": "20241202_170859",
     "patience": 5,
     "min_delta": 0.01,
     "monitor": "loss",

@@ -1,15 +1,17 @@
 import torch.nn as nn 
 import torch 
 from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
+from sampler.sampler import Sampler 
+
 
 class ImageGenerator:
 
-    def __init__(self, sampler=None, device=None):
+    def __init__(self, sampler, device=None):
         self.sampler = sampler
         self.device = device
 
     def reconstruct_image(self, x_t, predicted_noise, t, alpha_t, alpha_bar_t, beta_t, z):
-        alpha_t = get_alpha(t)
+        alpha_t = self.sampler.get_alpha(t)
         std_t = beta_t
         x_t_minus_one = (
             1 / torch.sqrt(alpha_t)
