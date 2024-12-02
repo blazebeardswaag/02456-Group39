@@ -66,13 +66,12 @@ class ScoreNetwork0(torch.nn.Module):
         ])
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
+        x = x.to(next(self.parameters()).device)  # Ensure x is on the same device as model
+        t = t.to(next(self.parameters()).device)  # Ensure t is on the same device as model
         # x: (..., ch0 * 28 * 28), t: (..., 1)
-        x2 = torch.reshape(x, (*x.shape[:-1], 1, 28, 28))  # (..., ch0, 28, 28)
-        tt = t[..., None, None].expand(*t.shape[:-1], 1, 28, 28)  # (..., 1, 28, 28)
-        try:
-          x2t = torch.cat((x2, tt), dim=-3)
-        except:
-            print(f"x2: {x2.shape}, tt: {tt.shape}")
+        x2 = torch.reshape(x, (*x.shape[:-1], 1, 28, 28))
+        tt = t[..., None, None].expand(*t.shape[:-1], 1, 28, 28)
+        x2t = torch.cat((x2, tt), dim=-3)
             
         signal = x2t
         signals = []

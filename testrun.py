@@ -16,21 +16,26 @@ import argparse
 
 
 with context_manager(
-    batch_size=96,
-    LR=1e-2,
+    batch_size=1024,
+    LR=1e-3,
     experiment_name="mnist_training",
     scheduler_type="linear",
-    device= torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-) as config: 
+    use_wandb=True,
 
-    wandb.init(project="test_run")
-    print(config.device)
+    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+) as config:
+    print("loading data")
+
     train_loader = load_MNIST_dataset(config.batch_size)
+    print("sampling data")
     sampler = Sampler(config, config.batch_size)
-    unet_model = UNet().to(config.device)
+    unet_model = UNet().to(config.device)  # Model moved to GPU
+    print(f"Model device: {next(unet_model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
-    trainer.train(train_loader, num_epochs=75) 
+    print("training")
+    trainer.train(train_loader, num_epochs=75)
+    print("done training")
 
 
 
