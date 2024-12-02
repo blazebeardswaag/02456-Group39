@@ -3,14 +3,16 @@ import json
 import os
 from datetime import datetime
 
-
-
 @dataclass
 class Config:
+    DIM:tuple = (28, 28)
+    MODEL_OUTPUT_PATH :str = "./model_serialzed"
+
+    use_wandb: bool = True
+    
     sweep_config = {
         'method': 'grid'
         }
-
 
     metric = {
         'name': 'loss',
@@ -19,39 +21,36 @@ class Config:
 
     sweep_config['metric'] = metric
 
-    DIM:tuple = (28, 28)
-    MODEL_OUTPUT_PATH :str = "./model_serialzed"
-
-    # Wandb config
-    use_wandb: bool = True
     
     # Parameters for sweep
     parameters_dict = {
         'batch_size': {
-            'values': [64,128,256,512,1024]
+            'values':[64,128,256,512,1024]
         }, 
 
         'scheduler_type':{
-            'values':['linear', 'cosin']
+            'values':['linear', 'cosine']
         },
 
         'LR':{
             'values':[1e-3,1e-4,1e-5,1e-6]
-        }
+        },
 
-    }
+        'num_epochs': {
+            'value': 2
+            },
+
+        'MAX_STEPS': {
+            'value': 1000
+        },
+
+        'device':{
+            'value': 'cuda'
+        }
+        }
 
     sweep_config['parameters'] = parameters_dict
 
-    # DIctionary for values that won't be optimized.
-    parameters_dict.update({
-    'num_epochs': {
-        'value': 2},
-    'MAX_STEPS': {
-        'value': 1000
-    }
-    
-    })
 
     # Training 
     device: str = None
