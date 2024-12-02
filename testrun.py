@@ -31,11 +31,12 @@ def train(config=None):
         unet_model = UNet().to(old_config.device)  # Model moved to GPU
         image_generator = ImageGenerator(sampler, old_config.device)
         trainer = Trainer(unet=unet_model, config=old_config, sweep_config=config, sampler=sampler, image_generator=image_generator)
-        trainer.train(train_loader, num_epochs=config.num_epochs)
+        trainer.train(train_loader)
 
 
 with context_manager(
-    experiment_name="mnist_training"
+    experiment_name="mnist_training",
+    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as old_config:
 
     #print(f"config.sweep_config: {config.sweep_config}")
@@ -43,4 +44,4 @@ with context_manager(
     #print(config['parameters'])
     sweep_id = wandb.sweep(old_config.sweep_config, project="default_project")
 
-    wandb.agent(sweep_id, train, count=5)
+    wandb.agent(sweep_id, train)
