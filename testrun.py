@@ -16,8 +16,8 @@ import argparse
 
 
 with context_manager(
-    batch_size=96,
-    LR=1e-2,
+    batch_size=1024,
+    LR=1e-3,
     experiment_name="mnist_training",
     scheduler_type="linear",
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -27,6 +27,7 @@ with context_manager(
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
     unet_model = UNet().to(config.device)  # Model moved to GPU
+    print(f"Model device: {next(unet_model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
