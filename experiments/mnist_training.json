@@ -11,7 +11,7 @@
     "device": "cpu",
     "training_losses": [],
     "experiment_name": "mnist_training",
-    "timestamp": "20241202_085922",
+    "timestamp": "20241202_090534",
     "patience": 5,
     "min_delta": 0.01,
     "monitor": "loss",
