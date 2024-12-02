@@ -4,11 +4,15 @@ import torch.nn as nn
 import torch
 
 with context_manager(
-
     experiment_name="mnist_training",
-    use_wandb=True,
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:
 
-# prints the sweep configs located in sweep_config file
-pprint.pprint(config.sweep_config)
+    print(config)
+    
+    print("-----------------"*5)
+    print(config.sweep_config)
+
+#sweep_id = wandb.sweep(config.sweep_config, project="default_project")
+
+#andb.agent(sweep_id, train, count=5)
