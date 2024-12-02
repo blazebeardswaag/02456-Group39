@@ -4,8 +4,9 @@ from utils.helpers import get_alpha, linear_beta_schedueler, get_alpha_bar_t
 
 class ImageGenerator:
 
-    def __init__(self, sampler=None):
+    def __init__(self, sampler=None, device=None):
         self.sampler = sampler
+        self.device = device
 
     def reconstruct_image(self, x_t, predicted_noise, t,
                         alpha_t, alpha_bar_t, beta_t, z):
@@ -42,7 +43,7 @@ class ImageGenerator:
         assert torch.all(step >= 1) and torch.all(step <= 1000), \
             "step must be integers between 1 and 999 (inclusive of 1, exclusive of 1000)."
 
-        alpha_bar_t = alpha_bar_t.view(-1, 1, 1, 1)  # [batch_size, 1, 1, 1]
+        alpha_bar_t = alpha_bar_t.view(-1, 1, 1, 1).to(self.device)  # [batch_size, 1, 1, 1]
         
         x_t_plus_one = torch.sqrt(alpha_bar_t) * x_t + torch.sqrt(1 - alpha_bar_t) * eps
         return x_t_plus_one, eps
