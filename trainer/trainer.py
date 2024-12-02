@@ -20,12 +20,13 @@ class Trainer(nn.Module):
         super().__init__()
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=lr)
-        self.loss = nn.MSELoss()
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr)
+        self.loss_fn = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
         self.image_saver = ImageSaver()
         self.save_frequency = 100
+
 
         self.use_wandb = getattr(config, 'use_wandb', False)
         print(self.use_wandb)
@@ -39,10 +40,12 @@ class Trainer(nn.Module):
             #sample_input = torch.randn(1, *self.unet.input_ shape).to(next(self.unet.parameters()))
             wandb.watch(self.unet, log="all", log_freq=10)
 
+
     def compute_loss(self, gen_noise, predicted_noise):
-        return self.loss(gen_noise, predicted_noise)  
-    
+        return self.loss_fn(gen_noise, predicted_noise)
+
     def train_step(self, image, batch_idx):
+
         image = image.to(self.config.device)
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
@@ -51,30 +54,30 @@ class Trainer(nn.Module):
         eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
-        ## Maybe can log generated images straight to wandb, something to look into...
-
+        # Flatten tensors and ensure they are on GPU
         flattened_x = img_noise.view(img_noise.shape[0], -1)
         gen_noise = gen_noise.view(gen_noise.size(0), -1)
+
+        # Forward pass through the model
         pred_noise = self.unet(flattened_x, t)
+
+        # Compute loss
         loss = self.compute_loss(pred_noise, gen_noise)
-        
+
+        # Backpropagation and optimization
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        # log loss to wandb
-        #if self.use_wandb and WANDB_AVAILABLE:
-        #    wandb.log({"train_step_loss": loss.item()}, step=batch_idx)
 
         return loss.item()
 
     def train(self, data_loader, num_epochs):
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
-        #self.config.device = str(next(self.unet.parameters()).device)
-        
+
         for epoch in range(num_epochs):
-            epoch_loss = 0.0 
+            epoch_loss = 0.0
             for batch_idx, batch in enumerate(data_loader):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
@@ -86,6 +89,7 @@ class Trainer(nn.Module):
             # log avg loss to wandb
             if self.use_wandb and WANDB_AVAILABLE:
                 wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
+
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
         if self.use_wandb and WANDB_AVAILABLE:

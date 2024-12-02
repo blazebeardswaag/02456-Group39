@@ -17,3 +17,6 @@ def load_MNIST_dataset(batch_size: int):
 
     return train_loader
 
+
+
+
