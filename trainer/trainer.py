@@ -71,7 +71,6 @@ class Trainer(nn.Module):
     def train(self, data_loader, num_epochs):
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
-        self.config.device = str(next(self.unet.parameters()).device)
         
         for epoch in range(num_epochs):
             epoch_loss = 0.0 

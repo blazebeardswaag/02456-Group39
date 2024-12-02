@@ -1,13 +1,13 @@
 import torch 
 import torch.nn as nn
-from .image_generator import ImageGenerator
-from utils.helpers import linear_beta_schedueler, cosine_beta_scheduler
+from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
+
 class Sampler:
     def __init__(self, config, batch_size):
         self.config = config 
         self.dim = self.config.DIM
         self.batch_size = batch_size
-        #assert config['scheduler_type'] in ["linear", "cosine"], "Scheduler type must be either linear or cosine"
+        # assert config['scheduler_type'] in ["linear", "cosine"], "Scheduler type must be either linear or cosine"
         self.scheduler_type = "linear"
             
     def sample_time_step(self):
