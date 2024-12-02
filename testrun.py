@@ -10,29 +10,27 @@ from sampler.image_generator import ImageGenerator
 from torchvision import datasets, transforms
 from torch.utils.data import Subset
 from configs.config_manager import context_manager
+from data.preprocessor.data_handler import load_MNIST_dataset
+import wandb
 
 
-BATCH_SIZE = 20
+with context_manager(
+    batch_size=64,
+    LR=1e-4,
+    experiment_name="mnist_training",
+    scheduler_type="linear",
+    device="cuda",
+    use_wandb=True
+) as config: 
 
-
-# Normalize 
-transform = transforms.Compose([
-    transforms.ToTensor(),               
-    transforms.Normalize((0.5,), (0.5,)) 
-])
-
-train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-limited_indices = list(range(30000)) 
-limited_dataset = Subset(train_dataset, limited_indices)
-train_loader = DataLoader(limited_dataset, batch_size=BATCH_SIZE, shuffle=True)
-
-
-with context_manager() as config: 
-    sampler = Sampler(config, BATCH_SIZE)
-    unet_model = UNet()
+    #wandb.init(project="test_run")
+    print(config.device)
+    train_loader = load_MNIST_dataset(config.batch_size)
+    sampler = Sampler(config, config.batch_size)
+    unet_model = UNet().to(config.device)
     image_generator = ImageGenerator(sampler)
-    trainer = Trainer(unet=unet_model, config = config, sampler=sampler, lr=1e-3, image_generator=image_generator)
+    trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
+    trainer.train(train_loader, num_epochs=5) 
 
-    trainer.train(train_loader, num_epochs=25)
 
 

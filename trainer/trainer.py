@@ -8,7 +8,12 @@ from sampler.image_generator import ImageGenerator
 from utils.image_saver import ImageSaver
 import os
 
-### TODO: Use EarlyStopping and train until convergance
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+except ImportError:
+    WANDB_AVAILABLE = False
+    print("Run `pip install wandb` to enable wandb logging, it's not not enabled!")
 
 class Trainer(nn.Module):
     def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
@@ -20,28 +25,34 @@ class Trainer(nn.Module):
         self.image_generator = image_generator
         self.config = config
         self.image_saver = ImageSaver()
-        self.save_frequency = 100  
+        self.save_frequency = 100
+
+        self.use_wandb = getattr(config, 'use_wandb', False)
+        print(self.use_wandb)
+        if self.use_wandb and WANDB_AVAILABLE:
+            wandb.init(
+                project=getattr(config, 'wandb_project', 'default_project'),
+                config=config.__dict__,
+                resume="allow",
+                mode='online' if getattr(config, 'wandb_mode', 'online') == 'online' else 'offline'
+            )
+            #sample_input = torch.randn(1, *self.unet.input_ shape).to(next(self.unet.parameters()))
+            wandb.watch(self.unet, log="all", log_freq=10)
 
     def compute_loss(self, gen_noise, predicted_noise):
         return self.loss(gen_noise, predicted_noise)  
     
     def train_step(self, image, batch_idx):
+        image = image.to(self.config.device)
         t = self.sampler.sample_time_step()
+        t = t.to(self.config.device)
         
-        alpha_bar = self.sampler.get_alpha_bar_t(t)  
-        eps = torch.randn_like(image)  
+        alpha_bar = self.sampler.get_alpha_bar_t(t).to(self.config.device) 
+        eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
-        if batch_idx % 10 == 0:
-            """         
-            for img_idx in range(min(4, image.shape[0])):
-                            self.image_saver.save_image_pair(
-                                original_img=image[img_idx:img_idx+1],
-                                noised_img=img_noise[img_idx:img_idx+1],
-                                timestep=t[img_idx].item(),
-                                batch_idx=f"{batch_idx}_img{img_idx}"
-                            )
-            """
+        ## Maybe can log generated images straight to wandb, something to look into...
+
         flattened_x = img_noise.view(img_noise.shape[0], -1)
         gen_noise = gen_noise.view(gen_noise.size(0), -1)
         pred_noise = self.unet(flattened_x, t)
@@ -50,10 +61,18 @@ class Trainer(nn.Module):
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        
+
+        # log loss to wandb
+        if self.use_wandb and WANDB_AVAILABLE:
+            wandb.log({"train_step_loss": loss.item()}, step=batch_idx)
+
         return loss.item()
 
     def train(self, data_loader, num_epochs):
+        self.config.num_epochs = num_epochs
+        self.config.batch_size = data_loader.batch_size
+        #self.config.device = str(next(self.unet.parameters()).device)
+        
         for epoch in range(num_epochs):
             epoch_loss = 0.0 
             for batch_idx, batch in enumerate(data_loader):
@@ -64,4 +83,18 @@ class Trainer(nn.Module):
             avg_loss = epoch_loss / len(data_loader)
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
+            # log avg loss to wandb
+            if self.use_wandb and WANDB_AVAILABLE:
+                wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
+
+            # maybe save model checkpoint
+            if self.use_wandb and WANDB_AVAILABLE:
+                if (epoch + 1) % self.save_frequency == 0 or (epoch + 1) == num_epochs:
+                    model_path = os.path.join(self.config.MODEL_OUTPUT_PATH, f"model_epoch_{epoch+1}.pth")
+                    torch.save(self.unet.state_dict(), model_path)
+                    wandb.save(model_path)
+
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
+        if self.use_wandb and WANDB_AVAILABLE:
+            wandb.save(self.config.MODEL_OUTPUT_PATH)
+            wandb.finish()
