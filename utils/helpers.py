@@ -10,7 +10,6 @@ from sampler.sampler import Sampler
 from configs.config import Config 
 from utils.image_saver import ImageSaver
 from configs.config_manager import context_manager
-from utils.scheduler_utils import get_alpha, linear_beta_schedueler, get_alpha_bar_t 
 import matplotlib.pyplot as plt
 
 
@@ -183,36 +182,3 @@ def show_image(frame, image_number, scale_factor=5):
         raise KeyboardInterrupt("Visualization interrupted by user.")
 
 
-
-
-
-def sample_epsilon(xT):
-    eps = torch.normal(mean=0.0, std=1.0, size=xT)
-    return eps    
-
-
-def get_alpha(t):
-    alpha_t = 1 - linear_beta_schedueler(t)
-    return alpha_t
-
-
-def linear_beta_schedueler(step):
-    d = (0.02 - 10**(-4))/(1000) 
-    b_t = 10**(-4) + step * d 
-    return b_t
-
-def cosine_beta_scheduler(timesteps, beta_start=1e-4, beta_end=0.02):
-    betas = torch.linspace(0, 1, timesteps)
-    return beta_start + 0.5 * (beta_end - beta_start) * (1 + torch.cos(math.pi * betas))
-
-
-def get_alpha_bar_t(t):
-
-    alpha = 1.0 - get_alpha(t)  
-    alpha_bar_t = torch.cumprod(alpha, dim=0)
-   # alpha_bar_t = alpha_bar_t.view(self.batch_size, 1, 1, 1)
-    return alpha_bar_t
-
-def beta_cosine_schedule(timesteps, beta_start=1e-4, beta_end=0.02):
-    betas = torch.linspace(0, 1, timesteps)
-    return beta_start + 0.5 * (beta_end - beta_start) * (1 + torch.cos(math.pi * betas))

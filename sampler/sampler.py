@@ -1,7 +1,6 @@
 import torch 
 import torch.nn as nn
-from .image_generator import ImageGenerator
-from utils.scheduler_utils import linear_beta_schedueler, cosine_beta_scheduler
+from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
 
 class Sampler:
     def __init__(self, config, batch_size):

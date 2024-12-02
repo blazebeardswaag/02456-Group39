@@ -1,17 +1,17 @@
 {
-    "LR": 0.001,
+    "LR": 0.0001,
     "MAX_STEPS": 1000,
     "DIM": [
         28,
         28
     ],
     "MODEL_OUTPUT_PATH": "./model_serialzed",
-    "batch_size": 64,
-    "num_epochs": 5,
+    "batch_size": 1000,
+    "num_epochs": null,
     "device": "cpu",
     "training_losses": [],
     "experiment_name": "mnist_training",
-    "timestamp": "20241202_000957",
+    "timestamp": "20241202_085922",
     "patience": 5,
     "min_delta": 0.01,
     "monitor": "loss",
