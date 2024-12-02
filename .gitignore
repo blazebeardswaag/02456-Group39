@@ -1,3 +1,5 @@
 __pycache__/
-data/MNIST
+
 myenv/
+data/MNIST/
+__pycache__/*
