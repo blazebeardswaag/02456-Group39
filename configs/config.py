@@ -3,20 +3,22 @@ import json
 import os
 from datetime import datetime
 
-sweep_config = {
-    'method': 'grid'
-    }
 
-
-metric = {
-    'name': 'loss',
-    'goal': 'minimize'   
-    }
-
-sweep_config['metric'] = metric
 
 @dataclass
 class Config:
+    sweep_config = {
+        'method': 'grid'
+        }
+
+
+    metric = {
+        'name': 'loss',
+        'goal': 'minimize'   
+        }
+
+    sweep_config['metric'] = metric
+
     DIM:tuple = (28, 28)
     MODEL_OUTPUT_PATH :str = "./model_serialzed"
 
