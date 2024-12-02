@@ -63,8 +63,8 @@ class Trainer(nn.Module):
         self.optimizer.step()
 
         # log loss to wandb
-        if self.use_wandb and WANDB_AVAILABLE:
-            wandb.log({"train_step_loss": loss.item()}, step=batch_idx)
+        #if self.use_wandb and WANDB_AVAILABLE:
+        #    wandb.log({"train_step_loss": loss.item()}, step=batch_idx)
 
         return loss.item()
 
@@ -81,18 +81,11 @@ class Trainer(nn.Module):
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+            #print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
             # log avg loss to wandb
             if self.use_wandb and WANDB_AVAILABLE:
                 wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
-
-            # maybe save model checkpoint
-            if self.use_wandb and WANDB_AVAILABLE:
-                if (epoch + 1) % self.save_frequency == 0 or (epoch + 1) == num_epochs:
-                    model_path = os.path.join(self.config.MODEL_OUTPUT_PATH, f"model_epoch_{epoch+1}.pth")
-                    torch.save(self.unet.state_dict(), model_path)
-                    wandb.save(model_path)
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
         if self.use_wandb and WANDB_AVAILABLE:
