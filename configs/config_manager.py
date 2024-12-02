@@ -13,4 +13,4 @@ def context_manager(**overrides):
     try: 
         yield config 
     finally: 
-        pass 
+        config.save() 
