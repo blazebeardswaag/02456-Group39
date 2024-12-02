@@ -15,7 +15,3 @@ def load_MNIST_dataset(batch_size: int):
     train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     return train_loader
-
-
-
-
