@@ -42,6 +42,9 @@ class Config:
         config_dict = asdict(self)
         config_dict['DIM'] = list(self.DIM) 
         
+        if hasattr(self, 'device') and hasattr(self.device, 'type'):
+            config_dict['device'] = str(self.device)
+        
         with open(filepath, 'w') as f:
             json.dump(config_dict, f, indent=4)
     
