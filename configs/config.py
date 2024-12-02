@@ -26,7 +26,7 @@ class Config:
     use_wandb: bool = True
     
     # Parameters for sweep
-    parameters_dict {
+    parameters_dict = {
         'batch_size': {
             'values': [64,128,256,512,1024]
         }, 
@@ -47,7 +47,7 @@ class Config:
     parameters_dict.update({
     'num_epochs': {
         'value': 2},
-    'MAX_STEPS' {
+    'MAX_STEPS': {
         'value': 1000
     }
     
