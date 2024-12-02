@@ -3,11 +3,11 @@ import torch.nn as nn
 from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
 
 class Sampler:
-    def __init__(self, config, batch_size):
+    def __init__(self, config, batch_size, scheduler_type):
         self.config = config
         self.dim = self.config.DIM
         self.batch_size = batch_size
-        self.scheduler_type = "linear"
+        self.scheduler_type = scheduler_type
 
     def sample_time_step(self):
 
