@@ -17,6 +17,10 @@ import pprint
 
 
 def train(config=None):
+
+    # wandb considers the word config to be a holy word and will cry if you don't let it have it
+    # as such I've changed the preview config to "old_config" to maintain compatibility.
+    # all the files have been altered to accomidate this.
     with wandb.init(
         project='default_project',
         config = config,
@@ -24,7 +28,6 @@ def train(config=None):
     ):
         config = wandb.config
         print(f"config: {config}")
-        
 
         train_loader = load_MNIST_dataset(config.batch_size)
         sampler = Sampler(old_config, config.batch_size, config.scheduler_type, config.MAX_STEPS)
@@ -36,12 +39,10 @@ def train(config=None):
 
 with context_manager(
     experiment_name="mnist_training",
-    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device=torch.device("cuda")
 ) as old_config:
 
-    #print(f"config.sweep_config: {config.sweep_config}")
-    #pprint.pprint(config.sweep_config)
-    #print(config['parameters'])
     sweep_id = wandb.sweep(old_config.sweep_config, project="default_project")
 
+    # very important that train is not called here, it must remain as a variable
     wandb.agent(sweep_id, train)

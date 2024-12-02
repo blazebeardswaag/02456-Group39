@@ -74,14 +74,12 @@ class Trainer(nn.Module):
     def train(self, data_loader):
         #self.sweep_config.batch_size = data_loader.batch_size
         
-        print('training')
         for epoch in range(self.num_epochs):
             epoch_loss = 0.0
             for batch_idx, batch in enumerate(data_loader):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
                 wandb.log({"batch loss": loss})
-                print(loss)
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
@@ -89,7 +87,7 @@ class Trainer(nn.Module):
 
             # log avg loss to wandb
             if self.use_wandb and WANDB_AVAILABLE:
-                wandb.log("epoch_loss": avg_loss)
+                wandb.log({"loss": avg_loss, "epoch": epoch})
 
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
