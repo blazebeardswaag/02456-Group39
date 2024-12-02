@@ -78,4 +78,4 @@ if __name__ == "__main__":
         device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"),
     ) as config:
         sampler = Sampler(config, 1)
-        generate_and_save_images(output_directory, sampler, config, num_images=15)
+        generate_and_save_images(output_directory, sampler, config, num_images=100)
