@@ -3,6 +3,7 @@ import torch
 from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
 
 class ImageGenerator:
+
     def __init__(self, sampler=None, device=None):
         self.sampler = sampler
         self.device = device
