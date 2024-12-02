@@ -1,6 +1,7 @@
 from dataclasses import dataclass, asdict
 import json
 import os
+import torch
 from datetime import datetime
 
 @dataclass
@@ -25,7 +26,7 @@ class Config:
     # Parameters for sweep
     parameters_dict = {
         'batch_size': {
-            'values':[64,128,256,512,1024]
+            'values':[1024,64,128,256,512,]
         }, 
 
         'scheduler_type':{
@@ -33,7 +34,7 @@ class Config:
         },
 
         'LR':{
-            'values':[1e-3,1e-4,1e-5,1e-6]
+            'values':[1e-4,1e-4,1e-5,1e-6]
         },
 
         'num_epochs': {
@@ -42,10 +43,6 @@ class Config:
 
         'MAX_STEPS': {
             'value': 1000
-        },
-
-        'device':{
-            'value': 'cuda'
         }
         }
 
