@@ -67,6 +67,9 @@ class ScoreNetwork0(torch.nn.Module):
 
     def forward(self, x: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
         # x: (..., ch0 * 28 * 28), t: (..., 1)
+        x = x.to(next(self.parameters()).device)
+        t = t.to(next(self.parameters()).device)
+        
         x2 = torch.reshape(x, (*x.shape[:-1], 1, 28, 28))  # (..., ch0, 28, 28)
         tt = t[..., None, None].expand(*t.shape[:-1], 1, 28, 28)  # (..., 1, 28, 28)
         try:
