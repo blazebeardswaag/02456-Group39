@@ -1,5 +1,8 @@
 __pycache__/
-
+myenv/
+wandb/*
 myenv/
 data/MNIST/
 __pycache__/*
+
+

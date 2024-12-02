@@ -10,8 +10,10 @@ class Sampler:
         self.scheduler_type = "linear"
 
     def sample_time_step(self):
+
         t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
         return t
+
 
     def get_alpha(self, step):
         if self.scheduler_type == "linear":
@@ -31,11 +33,13 @@ class Sampler:
         alpha_bar_results = []
         for i in range(batch_size):
             t = t_tensor[i].item()
+
             alphas = torch.tensor(
                 [self.get_alpha(t_i) for t_i in range(1, t + 1)],
                 dtype=torch.float32,
                 device=self.config.device  # Ensure alphas are on GPU
             )
+
             alpha_bar_t = alphas.prod()
             alpha_bar_results.append(alpha_bar_t)
         return torch.stack(alpha_bar_results).to(self.config.device)

@@ -20,9 +20,12 @@ with context_manager(
     LR=1e-3,
     experiment_name="mnist_training",
     scheduler_type="linear",
+    use_wandb=True,
+
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:
     print("loading data")
+
     train_loader = load_MNIST_dataset(config.batch_size)
     print("sampling data")
     sampler = Sampler(config, config.batch_size)

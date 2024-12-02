@@ -27,24 +27,31 @@ class Trainer(nn.Module):
         self.image_saver = ImageSaver()
         self.save_frequency = 100
 
+
+        self.use_wandb = getattr(config, 'use_wandb', False)
+        print(self.use_wandb)
+        if self.use_wandb and WANDB_AVAILABLE:
+            wandb.init(
+                project=getattr(config, 'wandb_project', 'default_project'),
+                config=config.__dict__,
+                resume="allow",
+                mode='online' if getattr(config, 'wandb_mode', 'online') == 'online' else 'offline'
+            )
+            #sample_input = torch.randn(1, *self.unet.input_ shape).to(next(self.unet.parameters()))
+            wandb.watch(self.unet, log="all", log_freq=10)
+
+
     def compute_loss(self, gen_noise, predicted_noise):
         return self.loss_fn(gen_noise, predicted_noise)
 
     def train_step(self, image, batch_idx):
-        # Move images to GPU
-        image = image.to(self.config.device)
 
-        # Sample time steps and move to GPU
+        image = image.to(self.config.device)
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
-
-        # Compute alpha_bar and ensure it's on GPU
-        alpha_bar = self.sampler.get_alpha_bar_t(t).to(self.config.device)
-
-        # Generate random noise on GPU
-        eps = torch.randn_like(image, device=self.config.device)
-
-        # Generate noisy images
+        
+        alpha_bar = self.sampler.get_alpha_bar_t(t).to(self.config.device) 
+        eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
         # Flatten tensors and ensure they are on GPU
@@ -62,6 +69,7 @@ class Trainer(nn.Module):
         loss.backward()
         self.optimizer.step()
 
+
         return loss.item()
 
     def train(self, data_loader, num_epochs):
@@ -76,7 +84,12 @@ class Trainer(nn.Module):
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+            #print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+
+            # log avg loss to wandb
+            if self.use_wandb and WANDB_AVAILABLE:
+                wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
+
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
         if self.use_wandb and WANDB_AVAILABLE:
