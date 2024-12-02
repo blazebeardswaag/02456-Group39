@@ -19,14 +19,15 @@ with context_manager(
     LR=1e-4,
     experiment_name="mnist_training",
     scheduler_type="linear",
-    device="cuda"
+    device="cuda",
+    use_wandb=True
 ) as config: 
 
-    wandb.init(project="test_run")
+    #wandb.init(project="test_run")
     print(config.device)
     train_loader = load_MNIST_dataset(config.batch_size)
     sampler = Sampler(config, config.batch_size)
-    unet_model = UNet()
+    unet_model = UNet().to(config.device)
     image_generator = ImageGenerator(sampler)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
     trainer.train(train_loader, num_epochs=5) 
