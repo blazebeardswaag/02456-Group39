@@ -71,25 +71,96 @@ def compute_activations(tensors, num_batches, classifier_fn):
     activations = tf.concat(activation_list, axis=0)
     return activations
 
-def compute_mnist_stats(mnist_classifier_fn):
-    mnist = load_mnist()
-    num_batches = 1
-    activations1 = compute_activations(mnist, num_batches, mnist_classifier_fn)
-    return activations1
-
-
-
 def save_activations(activations, path):
     np.save(path, activations.numpy())
 
-activations_real = np.load("./data/mnist/activations_real.npy")
-activations_real = tf.convert_to_tensor(activations_real, dtype=tf.float32)
+def create_mnist_classifier_for_training():
+    """
+    Creates and returns a CNN model for training on MNIST.
+    """
+    model = models.Sequential([
+        layers.InputLayer(input_shape=(28, 28, 1)),
+        layers.Conv2D(64, 3, strides=2, activation='relu'),
+        layers.Conv2D(128, 3, strides=2, activation='relu'),
+        layers.Flatten(),
+        layers.Dense(1024, activation='relu'),
+        layers.Dense(128, activation='relu'),  # Activations for FID
+        layers.Dense(10, activation='softmax')  # Classification output
+    ])
+    return model
 
-logger.info(f"Loading images of epoch {epoch_dir.name}")
-epoch_images = pack_images_to_tensor(path=epoch_dir,)
-logger.info("Computing fake activations")
-activation_fake = compute_activations(epoch_images, 1, classifier_fn)
+def create_mnist_classifier_for_activations():
+    """
+    Creates and returns a CNN model for computing activations.
+    """
+    inputs = layers.Input(shape=(28, 28, 1))
+    x = layers.Conv2D(64, 3, strides=2, activation='relu')(inputs)
+    x = layers.Conv2D(128, 3, strides=2, activation='relu')(x)
+    x = layers.Flatten()(x)
+    x = layers.Dense(1024, activation='relu')(x)
+    activations = layers.Dense(128, activation='relu')(x)  # Activations for FID
+    model = models.Model(inputs=inputs, outputs=activations)
+    return model
 
-logger.info("Computing FID")
-fid = tfgan.eval.frechet_classifier_distance_from_activations(activations_real, activation_fake)
-logger.info(f"FID: {fid}")
+def train_mnist_classifier():
+    """
+    Trains the classifier on the MNIST dataset and saves the weights.
+    """
+    # Load MNIST dataset
+    (x_train, y_train), (_, _) = tf.keras.datasets.mnist.load_data()
+    x_train = x_train.astype('float32') / 255.0
+    x_train = np.expand_dims(x_train, axis=-1)  # Add channel dimension
+
+    model = create_mnist_classifier_for_training()
+
+    model.compile(optimizer='adam',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    model.fit(x_train, y_train, epochs=5)
+    # Save weights
+    model.save_weights('mnist_classifier_weights.h5')
+
+def classifier_fn(images):
+    """
+    Classifier function to compute activations for FID calculation.
+    """
+    model = create_mnist_classifier_for_activations()
+    model.load_weights('mnist_classifier_weights.h5', by_name=True)
+    activations = model(images)
+    return activations
+
+def main():
+    # Step 1: Train classifier if weights do not exist
+    if not os.path.exists('mnist_classifier_weights.h5'):
+        logger.info('Training MNIST classifier...')
+        train_mnist_classifier()
+    else:
+        logger.info('MNIST classifier weights found.')
+
+    # Step 2: Compute activations of real images if not exist
+    if not os.path.exists('./data/mnist/activations_real.npy'):
+        logger.info('Computing activations of real images...')
+        activations_real = compute_activations(load_mnist(), num_batches=1, classifier_fn=classifier_fn)
+        save_activations(activations_real, './data/mnist/activations_real.npy')
+    else:
+        logger.info('Loading activations of real images...')
+        activations_real = np.load('./data/mnist/activations_real.npy')
+        activations_real = tf.convert_to_tensor(activations_real, dtype=tf.float32)
+
+    # Step 3: Load generated images and compute activations
+    epoch_dir = './generated_images'  # Ensure this directory contains your generated images
+    logger.info(f"Loading images from {epoch_dir}")
+    epoch_images = pack_images_to_tensor(path=epoch_dir)
+    logger.info("Computing activations of generated images")
+    activation_fake = compute_activations(epoch_images, num_batches=1, classifier_fn=classifier_fn)
+
+    # Step 4: Compute FID
+    logger.info("Computing FID")
+    fid = tfgan.eval.frechet_classifier_distance_from_activations(
+        activations_real, activation_fake
+    )
+    logger.info(f"FID: {fid.numpy()}")
+
+if __name__ == '__main__':
+    main()
