@@ -3,15 +3,16 @@ import torch.nn as nn
 from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
 
 class Sampler:
-    def __init__(self, config, batch_size, scheduler_type):
+    def __init__(self, config, batch_size, scheduler_type, MAX_STEPS):
         self.config = config
         self.dim = self.config.DIM
         self.batch_size = batch_size
         self.scheduler_type = scheduler_type
+        self.MAX_STEPS = MAX_STEPS
 
     def sample_time_step(self):
 
-        t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
+        t = torch.randint(low=1, high=self.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
         return t
 
 
