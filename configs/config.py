@@ -26,7 +26,7 @@ class Config:
     # Parameters for sweep
     parameters_dict = {
         'batch_size': {
-            'values':[1024,64,128,256,512,]
+            'values':[64,128,256,512,1024]
         }, 
 
         'scheduler_type':{
@@ -34,11 +34,11 @@ class Config:
         },
 
         'LR':{
-            'values':[1e-4,1e-4,1e-5,1e-6]
+            'values':[1e-3,1e-4,1e-5,1e-6]
         },
 
         'num_epochs': {
-            'value': 2
+            'value': 1
             },
 
         'MAX_STEPS': {
