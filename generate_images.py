@@ -48,7 +48,6 @@ def generate_single_image(image_idx, model, sampler, x_t):
 
 
 def save_image(tensor_image, output_path):
-    # Normalize image from [-1, 1] to [0, 255]
     tensor_image = ((tensor_image + 1) / 2 * 255).clamp(0, 255).byte()
     tensor_image = tensor_image.cpu().numpy()
     image = Image.fromarray(tensor_image, mode="L")  # Grayscale image
@@ -69,7 +68,6 @@ def generate_and_save_images(output_dir, sampler, config, num_images=15):
         print(f"Saved: {output_path}")
 
 
-# Main script
 if __name__ == "__main__":
     output_directory = "eval/generated_images"
     with context_manager(
