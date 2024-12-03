@@ -79,7 +79,8 @@ class Trainer(nn.Module):
             for batch_idx, batch in enumerate(data_loader):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
-                wandb.log({"batch loss": loss})
+                if self.use_wandb and WANDB_AVAILABLE:
+                    wandb.log({"batch loss": loss})
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
