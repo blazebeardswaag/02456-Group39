@@ -2,7 +2,7 @@ import torch
 import math
 
 
-class Sampler:
+class sampler:
     def __init__(self, config, batch_size, scheduler_type, MAX_STEPS):
         self.config = config
         self.dim = self.config.DIM
@@ -19,7 +19,6 @@ class Sampler:
         self.alpha_bar_scheduler = torch.cumprod(self.alpha_scheduler, dim=0).to(self.config.device)
 
     def sample_time_step(self):
-
         t = torch.randint(low=1, high=self.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
         return t
 
@@ -28,10 +27,8 @@ class Sampler:
         return alpha_t
     
     def get_alpha_bar_t(self, t_tensor):
-        t_indices = (t_tensor - 1).squeeze(-1).long()
-        alpha_bar_t = self.alpha_bar_scheduler[t_indices]
+        alpha_bar_t = self.alpha_bar_scheduler[t_tensor-1].to(self.config.device)
         return alpha_bar_t
-
 
     def linear_beta_scheduler(self, timesteps):
         d = (0.02 - 10**(-4))/timesteps
