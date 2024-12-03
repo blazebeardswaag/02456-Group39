@@ -16,29 +16,28 @@ except ImportError:
     print("Run `pip install wandb` to enable wandb logging, it's not not enabled!")
 
 class Trainer(nn.Module):
-    def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
+    def __init__(self, unet, config, sweep_config, sampler, image_generator):
         super().__init__()
+        self.sweep_config = sweep_config
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr)
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr=sweep_config.LR if sweep_config.LR else lr)
         self.loss_fn = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
         self.image_saver = ImageSaver()
         self.save_frequency = 100
+        self.num_epochs = sweep_config.num_epochs
+        self.batch_size = sweep_config.batch_size
 
 
         self.use_wandb = getattr(config, 'use_wandb', False)
         print(self.use_wandb)
-        if self.use_wandb and WANDB_AVAILABLE:
-            wandb.init(
-                project=getattr(config, 'wandb_project', 'default_project'),
-                config=config.__dict__,
-                resume="allow",
-                mode='online' if getattr(config, 'wandb_mode', 'online') == 'online' else 'offline'
-            )
-            #sample_input = torch.randn(1, *self.unet.input_ shape).to(next(self.unet.parameters()))
-            wandb.watch(self.unet, log="all", log_freq=10)
+        print(self.config.device)
+
+            
+        wandb.watch(self.unet, log="all", log_freq=10)
+
 
 
     def compute_loss(self, gen_noise, predicted_noise):
@@ -72,24 +71,24 @@ class Trainer(nn.Module):
 
         return loss.item()
 
-    def train(self, data_loader, num_epochs):
-        self.config.num_epochs = num_epochs
-        self.config.batch_size = data_loader.batch_size
-
-        for epoch in range(num_epochs):
-            print(f"Epoch [{epoch+1}/{num_epochs}]")
+    def train(self, data_loader):
+        #self.sweep_config.batch_size = data_loader.batch_size
+        
+        for epoch in range(self.num_epochs):
             epoch_loss = 0.0
             for batch_idx, batch in enumerate(data_loader):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
+                if self.use_wandb and WANDB_AVAILABLE:
+                    wandb.log({"batch loss": loss})
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
-            #print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+            print(f"Epoch [{epoch+1}/{self.num_epochs}], Loss: {avg_loss:.4f}")
 
             # log avg loss to wandb
             if self.use_wandb and WANDB_AVAILABLE:
-                wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
+                wandb.log({"loss": avg_loss, "epoch": epoch})
 
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
