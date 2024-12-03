@@ -1,6 +1,6 @@
-import torch 
-import torch.nn as nn
-from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
+import torch
+import math
+
 
 class Sampler:
     def __init__(self, config, batch_size, scheduler_type, MAX_STEPS):
@@ -10,39 +10,35 @@ class Sampler:
         self.scheduler_type = scheduler_type
         self.MAX_STEPS = MAX_STEPS
 
+        if self.scheduler_type == "linear":
+            self.beta_scheduler = self.linear_beta_scheduler(self.MAX_STEPS)
+        elif self.scheduler_type == "cosine":
+            self.beta_scheduler = self.cosine_beta_scheduler(self.MAX_STEPS)
+        
+        self.alpha_scheduler = 1 - self.beta_scheduler
+        self.alpha_bar_scheduler = torch.cumprod(self.alpha_scheduler, dim=0).to(self.config.device)
+
     def sample_time_step(self):
 
         t = torch.randint(low=1, high=self.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
         return t
 
-
     def get_alpha(self, step):
-        if self.scheduler_type == "linear":
-            beta_t = linear_beta_schedueler(step)
-        elif self.scheduler_type == "cosine":
-            beta_t = cosine_beta_scheduler(step)
-        alpha_t = 1 - beta_t
+        alpha_t = self.alpha_scheduler[step-1]
         return alpha_t
-
-    def linear_beta_schedueler(self, step):
-        d = (0.02 - 1e-4) / 1000
-        b_t = 1e-4 + step * d
-        return b_t
-
+    
     def get_alpha_bar_t(self, t_tensor):
-        batch_size = t_tensor.shape[0]
-        alpha_bar_results = []
-        for i in range(batch_size):
-            t = t_tensor[i].item()
+        t_indices = (t_tensor - 1).squeeze(-1).long()
+        alpha_bar_t = self.alpha_bar_scheduler[t_indices]
+        return alpha_bar_t
 
-            alphas = torch.tensor(
-                [self.get_alpha(t_i) for t_i in range(1, t + 1)],
-                dtype=torch.float32,
-                device=self.config.device  # Ensure alphas are on GPU
-            )
 
-            alpha_bar_t = alphas.prod()
-            alpha_bar_results.append(alpha_bar_t)
-        return torch.stack(alpha_bar_results).to(self.config.device)
-   
-   
+    def linear_beta_scheduler(self, timesteps):
+        d = (0.02 - 10**(-4))/timesteps
+        b_t = 1e-4 + torch.arange(1, timesteps+1) * d
+        return b_t.to(self.config.device)
+
+    def cosine_beta_scheduler(self, timesteps, beta_start=1e-4, beta_end=0.02):
+        betas = torch.linspace(0, 1, timesteps)
+        b_t = beta_start + 0.5 * (beta_end - beta_start) * (1 + torch.cos(math.pi * betas))
+        return b_t.to(self.config.device)

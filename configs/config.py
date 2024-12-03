@@ -9,7 +9,7 @@ class Config:
     DIM:tuple = (28, 28)
     MODEL_OUTPUT_PATH :str = "./model_serialzed"
 
-    use_wandb: bool = True
+    use_wandb: bool = None
     
     sweep_config = {
         'method': 'grid'
