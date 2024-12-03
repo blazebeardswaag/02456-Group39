@@ -27,10 +27,8 @@ class Sampler:
         return alpha_t
     
     def get_alpha_bar_t(self, t_tensor):
-        t_indices = (t_tensor - 1).squeeze(-1).long()
-        alpha_bar_t = self.alpha_bar_scheduler[t_indices]
+        alpha_bar_t = self.alpha_bar_scheduler[t_tensor-1].to(self.config.device)
         return alpha_bar_t
-
 
     def linear_beta_scheduler(self, timesteps):
         d = (0.02 - 10**(-4))/timesteps
