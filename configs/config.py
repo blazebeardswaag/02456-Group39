@@ -11,7 +11,7 @@ class Config:
     MODEL_OUTPUT_PATH :str = "./model_serialzed"
 
     # Wandb config
-    use_wandb: bool = True
+    use_wandb: bool = False
     
     # Training 
     batch_size: int = None

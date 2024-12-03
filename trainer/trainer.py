@@ -77,6 +77,7 @@ class Trainer(nn.Module):
         self.config.batch_size = data_loader.batch_size
 
         for epoch in range(num_epochs):
+            print(f"Epoch [{epoch+1}/{num_epochs}]")
             epoch_loss = 0.0
             for batch_idx, batch in enumerate(data_loader):
                 images, _ = batch
