@@ -11,7 +11,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import Subset
 from configs.config_manager import context_manager
 from data.preprocessor.data_handler import load_MNIST_dataset
-#import wandb
+import wandb
 import argparse
 import pprint
 
