@@ -90,7 +90,7 @@ class Receiver:
 
 
 
-def load_model(device, model_path="cosine_test_2_reverse sign_lower_lr"):
+def load_model(device, model_path="cosine_test_250_epochs_weight_decay_Lr1e-3_128batchsize"):
     model = ScoreNetwork0().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
