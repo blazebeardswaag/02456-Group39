@@ -37,5 +37,5 @@ class Sampler:
 
     def cosine_beta_scheduler(self, timesteps, beta_start=1e-4, beta_end=0.02):
         betas = torch.linspace(0, 1, timesteps)
-        b_t = beta_start + 0.5 * (beta_end - beta_start) * (1 + torch.cos(math.pi * betas))
+        b_t = beta_start + 0.5 * (beta_end - beta_start) * (1 - torch.cos(math.pi * betas))
         return b_t.to(self.config.device)
