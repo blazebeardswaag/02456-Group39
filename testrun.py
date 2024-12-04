@@ -16,10 +16,10 @@ import argparse
 
 
 with context_manager(
-    batch_size=1024,
+    batch_size=128,
     LR=1e-3,
     experiment_name="mnist_training",
-    scheduler_type="linear",
+    scheduler_type="cosine",
     use_wandb=False,
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:

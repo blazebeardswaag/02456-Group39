@@ -85,11 +85,11 @@ class Trainer(nn.Module):
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
-            #print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
             # log avg loss to wandb
-            if self.use_wandb and WANDB_AVAILABLE:
-                wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
+            #if self.use_wandb and WANDB_AVAILABLE:
+            #    wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
 
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)

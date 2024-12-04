@@ -1,5 +1,5 @@
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 
 
@@ -13,6 +13,10 @@ def get_transform():
 def load_MNIST_dataset(batch_size: int):
     transform = get_transform()
     train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
+    
+    # Modify here: Use only the first 300 samples
+    train_dataset = Subset(train_dataset, range(1000))
+    
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 
     return train_loader
