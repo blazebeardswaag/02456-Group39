@@ -98,6 +98,7 @@ class Trainer(nn.Module):
                     torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
                     if self.use_wandb and WANDB_AVAILABLE:
                         wandb.save(self.config.MODEL_OUTPUT_PATH)
+                        wandb.log({"best_loss": best_loss, "epoch": epoch})
                     print(f"Stopping early due to no improvement in {self.patience} epochs.\n Best loss: {best_loss:.4f}")
                     break
 
