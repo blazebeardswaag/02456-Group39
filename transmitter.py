@@ -59,18 +59,21 @@ class Receiver:
         self.device = device
         self.model = load_model(device)
         self.sampler = sampler
-        self.image_gen = ImageGenerator()
+        self.image_gen = ImageGenerator(self.sampler, device=self.device)
 
     async def receive(self, x_t, t):
         x_t = self.sample_one_step(x_t, t)
         return x_t
 
     def sample_one_step(self, x_t, t):
-        t_tensor = torch.tensor([t]).unsqueeze(0)
+        t_tensor = torch.tensor([t], device=self.device).unsqueeze(0)
         eps_theta = self.model(x_t.view(1, -1), t_tensor)
         alpha_t = self.sampler.get_alpha(t_tensor)
         alpha_bar_t = self.sampler.get_alpha_bar_t(t_tensor)
-        beta_t = self.sampler.linear_beta_schedueler(t_tensor)
+
+        # Instead of calling cosine_beta_scheduler(t_tensor), just index into the precomputed schedule
+        beta_t = self.sampler.beta_scheduler[t-1]
+
         z = torch.randn_like(x_t) if t > 1 else 0
 
         x_t = self.image_gen.reconstruct_image(
@@ -82,10 +85,12 @@ class Receiver:
             beta_t,
             z,
         )
+
         return x_t.view(28, 28)
 
 
-def load_model(device, model_path="model_serialzed"):
+
+def load_model(device, model_path="cosine_test_1_current"):
     model = ScoreNetwork0().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
@@ -102,7 +107,7 @@ async def main():
         scheduler_type="cosine",
         device=device
     ) as config:
-        sampler = Sampler(config, batch_size=1)
+        sampler = Sampler(config, config.batch_size, config.scheduler_type, 1000)
         invoker = Invoker(device, sampler)
         await invoker.execute()
 
