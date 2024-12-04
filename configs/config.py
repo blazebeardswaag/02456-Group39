@@ -45,7 +45,7 @@ class Config:
             'values':[500, 1000]
         },
         'patience':{
-            'value': 10
+            'value': 5
         }
         }
 
