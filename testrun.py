@@ -39,7 +39,7 @@ def train(config=None):
 
 with context_manager(
     experiment_name="mnist_training",
-    use_wandb = False,
+    use_wandb = True,
     device=torch.device("cuda")
 ) as old_config:
 
