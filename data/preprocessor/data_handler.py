@@ -15,7 +15,7 @@ def load_MNIST_dataset(batch_size: int):
     train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     
     # Modify here: Use only the first 300 samples
-    train_dataset = Subset(train_dataset, range(1000))
+    #train_dataset = Subset(train_dataset, range(50000))
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
 

@@ -16,8 +16,8 @@ import argparse
 
 
 with context_manager(
-    batch_size=128,
-    LR=1e-3,
+    batch_size=1024,
+    LR=1e-4,
     experiment_name="mnist_training",
     scheduler_type="cosine",
     use_wandb=False,
@@ -35,7 +35,7 @@ with context_manager(
     print(config.scheduler_type)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
-    trainer.train(train_loader, num_epochs=75)
+    trainer.train(train_loader, num_epochs=50)
     print("done training")
 
 

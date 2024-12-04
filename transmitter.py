@@ -99,7 +99,7 @@ async def main():
         batch_size=1000,
         LR=1e-4,
         experiment_name="mnist_training",
-        scheduler_type="linear",
+        scheduler_type="cosine",
         device=device
     ) as config:
         sampler = Sampler(config, batch_size=1)
