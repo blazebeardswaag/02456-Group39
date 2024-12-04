@@ -16,11 +16,11 @@ except ImportError:
     print("Run `pip install wandb` to enable wandb logging, it's not not enabled!")
 
 class Trainer(nn.Module):
-    def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
+    def __init__(self, unet, config, sampler, image_generator, lr=1e-3, weight_decay=1e-2):
         super().__init__()
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr)
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr, weight_decay=weight_decay)
         self.loss_fn = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
@@ -92,7 +92,7 @@ class Trainer(nn.Module):
             #    wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
 
 
-        torch.save(self.unet.state_dict(), "cosine_test_2_reverse sign_lower_lr")
+        torch.save(self.unet.state_dict(), "cosine_test_250_epochs_weight_decay_Lr1e-3_128batchsize")
         if self.use_wandb and WANDB_AVAILABLE:
             wandb.save(self.config.MODEL_OUTPUT_PATH)
             wandb.finish()
