@@ -35,7 +35,7 @@ with context_manager(
     print(config.scheduler_type)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
-    trainer.train(train_loader, num_epochs=50)
+    trainer.train(train_loader, num_epochs=100)
     print("done training")
 
 
