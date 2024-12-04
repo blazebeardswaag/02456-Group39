@@ -6,3 +6,4 @@ data/MNIST/
 __pycache__/*
 
 
+experiments/mnist_training.json
