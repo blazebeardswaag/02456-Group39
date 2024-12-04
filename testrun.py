@@ -40,7 +40,7 @@ def train(config=None):
 with context_manager(
     experiment_name="mnist_training",
     use_wandb = True,
-    device=torch.device("cuda")
+    device=torch.device("cpu")
 ) as old_config:
 
     sweep_id = wandb.sweep(old_config.sweep_config, project="default_project")
