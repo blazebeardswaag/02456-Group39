@@ -21,7 +21,7 @@ class Trainer(nn.Module):
         self.sweep_config = sweep_config
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=sweep_config.LR if sweep_config.LR else lr)
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr=sweep_config.LR, weight_decay=1e-2)
         self.loss_fn = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
