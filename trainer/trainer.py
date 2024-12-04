@@ -92,7 +92,7 @@ class Trainer(nn.Module):
             #    wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
 
 
-        torch.save(self.unet.state_dict(), "cosine_test_2_reverse sign")
+        torch.save(self.unet.state_dict(), "cosine_test_2_reverse sign_lower_lr")
         if self.use_wandb and WANDB_AVAILABLE:
             wandb.save(self.config.MODEL_OUTPUT_PATH)
             wandb.finish()

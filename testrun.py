@@ -16,8 +16,8 @@ import argparse
 
 
 with context_manager(
-    batch_size=1024,
-    LR=1e-4,
+    batch_size=128,
+    LR=1e-3,
     experiment_name="mnist_training",
     scheduler_type="cosine",
     use_wandb=False,
