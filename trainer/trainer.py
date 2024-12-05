@@ -8,36 +8,19 @@ from sampler.image_generator import ImageGenerator
 from utils.image_saver import ImageSaver
 import os
 
-try:
-    import wandb
-    WANDB_AVAILABLE = True
-except ImportError:
-    WANDB_AVAILABLE = False
-    print("Run `pip install wandb` to enable wandb logging, it's not not enabled!")
 
 class Trainer(nn.Module):
     def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
         super().__init__()
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr, weight_decay=0.01)    
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr)    
         self.loss_fn = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
         self.image_saver = ImageSaver()
         self.save_frequency = 100
-
-        self.use_wandb = getattr(config, 'use_wandb', False)
-        print(self.use_wandb)
-        if self.use_wandb and WANDB_AVAILABLE:
-            wandb.init(
-                project=getattr(config, 'wandb_project', 'default_project'),
-                config=config.__dict__,
-                resume="allow",
-                mode='online' if getattr(config, 'wandb_mode', 'online') == 'online' else 'offline'
-            )
-            #sample_input = torch.randn(1, *self.unet.input_ shape).to(next(self.unet.parameters()))
-            wandb.watch(self.unet, log="all", log_freq=10)
+        self.clip_value = 1.0
 
 
     def compute_loss(self, gen_noise, predicted_noise):
@@ -53,22 +36,29 @@ class Trainer(nn.Module):
         eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
-        # Flatten tensors and ensure they are on GPU
-        flattened_x = img_noise.view(img_noise.shape[0], -1)
-        gen_noise = gen_noise.view(gen_noise.size(0), -1)
-
-        
-        pred_noise = self.unet(flattened_x, t)
-
-        # Compute loss
+        #img_noise  = img_noise.view(img_noise.shape[0], -1)
+        pred_noise = self.unet(img_noise, t)
+        #gen_noise = gen_noise.view(gen_noise.shape[0], -1)
         loss = self.compute_loss(pred_noise, gen_noise)
 
-        # Backpropagation and optimization
         self.optimizer.zero_grad()
         loss.backward()
+
+       # print(f"Batch {batch_idx}, Gradients:")
+       # for name, param in self.unet.named_parameters():
+        #    if param.grad is not None:
+         #       print(f"{name}: mean={param.grad.abs().mean().item():.6f}, "
+          #              f"max={param.grad.abs().max().item():.6f}, "
+           #             f"min={param.grad.abs().min().item():.6f}")
+            #else:
+             #   print(f"{name}: grad=None")
+
+        # Gradient clipping
+  
+  
+  
+        torch.nn.utils.clip_grad_norm_(self.unet.parameters(), max_norm=self.clip_value)
         self.optimizer.step()
-
-
         return loss.item()
 
     def train(self, data_loader, num_epochs):
@@ -90,12 +80,6 @@ class Trainer(nn.Module):
 
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
-            # log avg loss to wandb
-            if self.use_wandb and WANDB_AVAILABLE:
-                wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
-
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
-        if self.use_wandb and WANDB_AVAILABLE:
-            wandb.save(self.config.MODEL_OUTPUT_PATH)
-            wandb.finish()
+      

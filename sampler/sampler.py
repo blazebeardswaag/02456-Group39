@@ -8,14 +8,12 @@ class Sampler:
         self.dim = self.config.DIM
         self.batch_size = batch_size
         self.scheduler_type = config.scheduler_type 
-    
         assert self.scheduler_type in ["cosine", "linear"], f"schedueler type must either be cosine or linear"
 
     def sample_time_step(self):
 
-        t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
+        t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size,), device=self.config.device)
         return t
-
 
     def get_alpha(self, step):
         if self.scheduler_type == "linear":
