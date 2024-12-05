@@ -6,9 +6,9 @@ class SelfAttention(nn.Module):
         super().__init__()
         self.channels = channels
         self.mha = nn.MultiheadAttention(channels, 4, batch_first=True)
-        self.ln = nn.LayerNorm([channels])
+        self.ln = nn.LayerNorm([channels], eps = 1e-2)
         self.ff_self = nn.Sequential(
-            nn.LayerNorm([channels]),
+            nn.LayerNorm([channels], eps = 1e-2),
             nn.Linear(channels, channels),
             nn.LogSigmoid()
         )
