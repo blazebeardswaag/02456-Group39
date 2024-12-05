@@ -59,7 +59,7 @@ class Receiver:
         self.device = device
         self.model = load_model(device)
         self.sampler = sampler
-        self.image_gen = ImageGenerator()
+        self.image_gen = ImageGenerator(self.sampler)
 
     async def receive(self, x_t, t):
         x_t = self.sample_one_step(x_t, t)
@@ -85,7 +85,7 @@ class Receiver:
         return x_t.view(28, 28)
 
 
-def load_model(device, model_path="model_serialzed"):
+def load_model(device, model_path="model_serialzed_350_epochs"):
     model = ScoreNetwork0().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()

@@ -20,13 +20,12 @@ class Trainer(nn.Module):
         super().__init__()
         self.sampler = sampler
         self.unet = unet
-        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr)
+        self.optimizer = optim.AdamW(self.unet.parameters(), lr=config.LR if config.LR else lr, weight_decay=0.01)    
         self.loss_fn = nn.MSELoss()
         self.image_generator = image_generator
         self.config = config
         self.image_saver = ImageSaver()
         self.save_frequency = 100
-
 
         self.use_wandb = getattr(config, 'use_wandb', False)
         print(self.use_wandb)
@@ -58,7 +57,7 @@ class Trainer(nn.Module):
         flattened_x = img_noise.view(img_noise.shape[0], -1)
         gen_noise = gen_noise.view(gen_noise.size(0), -1)
 
-        # Forward pass through the model
+        
         pred_noise = self.unet(flattened_x, t)
 
         # Compute loss
@@ -75,7 +74,7 @@ class Trainer(nn.Module):
     def train(self, data_loader, num_epochs):
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
-
+        best_model_loss = 10
         for epoch in range(num_epochs):
             epoch_loss = 0.0
             for batch_idx, batch in enumerate(data_loader):
@@ -84,7 +83,12 @@ class Trainer(nn.Module):
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
-            #print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+            if avg_loss< best_model_loss: 
+                best_model_loss = avg_loss 
+                torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
+                print(f"Best model loss: {best_model_loss}\nsaved to: {self.config.MODEL_OUTPUT_PATH}")
+
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
             # log avg loss to wandb
             if self.use_wandb and WANDB_AVAILABLE:

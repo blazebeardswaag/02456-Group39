@@ -38,7 +38,8 @@ class ScoreNetwork0(nn.Module):
                 nn.MaxPool2d(kernel_size=2, stride=2),
                 nn.Conv2d(chs[0], chs[1], kernel_size=3, padding=1),
                 nn.LogSigmoid(),
-                SelfAttention(chs[1]),  # Added attention at 14x14 resolution
+                SelfAttention(chs[1]),  # Added attention at 16x16 resolution
+
             ),
             nn.Sequential(
                 nn.MaxPool2d(kernel_size=2, stride=2),
@@ -48,11 +49,13 @@ class ScoreNetwork0(nn.Module):
             nn.Sequential(
                 nn.MaxPool2d(kernel_size=2, stride=2, padding=1),
                 nn.Conv2d(chs[2], chs[3], kernel_size=3, padding=1),
+                nn.Dropout(p=0.1),
                 nn.LogSigmoid(),
             ),
             nn.Sequential(
                 nn.MaxPool2d(kernel_size=2, stride=2),
                 nn.Conv2d(chs[3], chs[4], kernel_size=3, padding=1),
+                nn.Dropout(p=0.1),
                 nn.LogSigmoid(),
             ),
         ])
