@@ -21,7 +21,7 @@ def train(config=None):
     # as such I've changed the preview config to "old_config" to maintain compatibility.
     # all the files have been altered to accomidate this.
     with wandb.init(
-        project='default_project',
+        #project='default_project',
         config=config,
         resume="allow"
     ):
@@ -46,5 +46,5 @@ with context_manager(
 
     sweep_id = wandb.sweep(old_config.sweep_config, project="default_project")
     # very important that train is not called here, it must remain as a variable
-    wandb.agent(sweep_id, train)
+    wandb.agent('bverd0we', project='default_project', train)
     
