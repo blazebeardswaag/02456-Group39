@@ -6,9 +6,10 @@ from sampler.sampler import Sampler
 from configs.config import Config
 from configs.config_manager import context_manager
 from PIL import Image
+from utils.helpers_model import get_alpha, get_alpha_bar_t, linear_beta_schedueler
 
 
-def load_model(device, model_path="model_serialzed"):
+def load_model(device, model_path="model_serialzed2"):
     model = ScoreNetwork0().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
@@ -20,7 +21,7 @@ def initialize_image(size=(28, 28)):
 
 
 def generate_single_image(image_idx, model, sampler, x_t):
-    image_generator = ImageGenerator()
+    image_generator = ImageGenerator(sampler)
     with torch.no_grad():
         for t in range(1000, 1, -1):
             print(f"Constructing image {image_idx + 1} at timestep: {t}", end="\r")
@@ -28,9 +29,9 @@ def generate_single_image(image_idx, model, sampler, x_t):
 
             # Calculate required values
             eps_theta = model(x_t.view(1, -1), t_tensor)
-            alpha_t = sampler.get_alpha(t_tensor)
-            alpha_bar_t = sampler.get_alpha_bar_t(t_tensor)
-            beta_t = sampler.linear_beta_schedueler(t_tensor)
+            alpha_t = get_alpha(t_tensor)
+            alpha_bar_t = get_alpha_bar_t(t_tensor)
+            beta_t = linear_beta_schedueler(t_tensor)
             z = torch.randn_like(x_t) if t > 1 else 0
 
             x_t = image_generator.reconstruct_image(
@@ -72,10 +73,10 @@ if __name__ == "__main__":
     output_directory = "eval/generated_images"
     with context_manager(
         batch_size=1000,
-        LR=1e-4,
+        LR=2e-4,
         experiment_name="mnist_training",
         scheduler_type="linear",
         device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"),
     ) as config:
-        sampler = Sampler(config, 1)
-        generate_and_save_images(output_directory, sampler, config, num_images=100)
+        sampler = Sampler(config, 1, config.scheduler_type, 1000)
+        generate_and_save_images(output_directory, sampler, config, num_images=10)

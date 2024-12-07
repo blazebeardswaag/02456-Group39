@@ -11,6 +11,9 @@ from configs.config_manager import context_manager
 from display.grid_display import ImageManager
 from models.unet import ScoreNetwork0
 import matplotlib.pyplot as plt 
+import os
+import cv2
+import numpy as np
 
 class Invoker:
     def __init__(self, device, sampler):
@@ -26,10 +29,12 @@ class Invoker:
 
 
 class Sender:
-    def __init__(self, receiver, total_steps=1000, num_images=5):
+    def __init__(self, receiver, total_steps=1000, num_images=15, save_path="generated_images"):
         self.total_steps = total_steps
         self.receiver = receiver
         self.image_manager = ImageManager(num_images=num_images)
+        self.save_path = save_path
+        os.makedirs(self.save_path, exist_ok=True)  # Ensure the directory exists
 
     async def send(self):
         images = [initialize_image(size=(28, 28)) for _ in range(len(self.image_manager.images))]
@@ -40,6 +45,10 @@ class Sender:
                 x_t = await self.receiver.receive(x_t, t)
                 images[idx] = x_t
                 self.image_manager.update_image(idx, x_t, t)
+
+            # Save images every 100 steps
+            if t % 100 == 0 or t == 1:
+                self.save_images(images, t)
 
             self.display_grid_cv2(images)
 
@@ -52,6 +61,27 @@ class Sender:
         """
         metadata = self.image_manager.get_metadata()
         show_images_cv2(images, metadata, scale_factor=9, final=final)
+
+    def save_images(self, images, t):
+        """
+        Save the current grid of images to the specified folder.
+        """
+        # Convert each image tensor to a NumPy array
+        images_np = [(img.detach().cpu().numpy() * 255).astype("uint8") for img in images]
+        
+        # Stack the images into a grid (adjust grid size as needed)
+        grid_size = int(len(images)**0.5)  # Assuming a square grid
+        rows = []
+        for i in range(grid_size):
+            row = np.hstack(images_np[i * grid_size: (i + 1) * grid_size])
+            rows.append(row)
+        grid = np.vstack(rows)
+        
+        # Save the grid as an image
+        file_name = os.path.join(self.save_path, f"step_{t}_grid.png")
+        cv2.imwrite(file_name, grid)
+        print(f"Grid image saved for step {t} in {self.save_path}.")
+
 
 
 class Receiver:
@@ -90,7 +120,7 @@ class Receiver:
 
 
 
-def load_model(device, model_path="cosine_test_250_epochs_weight_decay_Lr1e-3_128batchsize"):
+def load_model(device, model_path="model_serialzed2"):
     model = ScoreNetwork0().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
@@ -102,9 +132,9 @@ async def main():
 
     with context_manager(
         batch_size=1000,
-        LR=1e-4,
+        LR=2e-4,
         experiment_name="mnist_training",
-        scheduler_type="cosine",
+        scheduler_type="linear",
         device=device
     ) as config:
         sampler = Sampler(config, config.batch_size, config.scheduler_type, 1000)
