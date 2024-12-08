@@ -46,8 +46,8 @@ class Trainer(nn.Module):
         return self.loss_fn(gen_noise, predicted_noise)
 
     def train_step(self, image, batch_idx):
-
         image = image.to(self.config.device)
+        image = (image - 0.5) / 0.5
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
         
