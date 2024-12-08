@@ -93,8 +93,7 @@ class Trainer(nn.Module):
 
             avg_loss = epoch_loss / len(data_loader)
             # log avg loss to wandb
-            if self.use_wandb and WANDB_AVAILABLE:
-                wandb.log({"loss": avg_loss, "epoch": epoch})
+            wandb.log({"loss": avg_loss, "epoch": epoch})
             if avg_loss< best_model_loss: 
                 best_model_loss = avg_loss 
                 torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
