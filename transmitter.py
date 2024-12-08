@@ -35,7 +35,7 @@ class Invoker:
 
 
 class Sender:
-    def __init__(self, receiver, total_steps=1000, num_images=1):
+    def __init__(self, receiver, total_steps=1000, num_images=10):
         self.total_steps = total_steps
         self.receiver = receiver
         self.image_manager = ImageManager(num_images=num_images)
@@ -63,27 +63,41 @@ class Sender:
         self.save_progress_plot(images, 0, mu, sigma, is_final=True)
 
     def save_progress_plot(self, images, timestep, mu, sigma, is_final=False):
-        plt.figure(figsize=(2, 2))  # Small figure size since images are tiny
+        num_images = len(images)
+
+        # Determine the grid size for subplots
+        cols = int(num_images**0.5)
+        rows = (num_images + cols - 1) // cols  # Ensure all images fit in the grid
+
+        fig, axs = plt.subplots(rows, cols, figsize=(cols * 4, rows * 4), dpi=100)
+        axs = axs.flatten() if num_images > 1 else [axs]  # Flatten in case of a single image
+
         for idx, img in enumerate(images):
             if isinstance(img, torch.Tensor):
-                img = img.detach().numpy()
+                # Convert to numpy and move channels to the last dimension
+                img = img.detach().cpu().numpy()
                 img = img.transpose(1, 2, 0)  # CHW -> HWC
-                img = (img - img.min()) / (img.max() - img.min() + 1e-8)
-                
-                plt.subplot(1, len(images), idx + 1)
-                plt.imshow(img, interpolation='nearest')  
-                plt.axis('off')
-                
-        title = 'Final Generated Images' if is_final else f'Generation Progress - Timestep {timestep}'
-        plt.suptitle(title, fontsize=8)
 
+                # Normalize to [0, 1] range
+                img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+
+            # Display the image
+            axs[idx].imshow(img, extent=(0, 32, 0, 32))  # Explicitly set dimensions
+            axs[idx].axis('off')
+            axs[idx].set_title(f'Image {idx + 1}')
+
+        # Hide unused subplots if there are any
+        for idx in range(num_images, len(axs)):
+            axs[idx].axis('off')
+
+        # Set the title and save the figure
+        title = 'Final Generated Images' if is_final else f'Generation Progress - Timestep {timestep}'
+        plt.suptitle(title)
         filename = 'final_result.png' if is_final else f'timestep_{timestep:04d}.png'
-        plt.savefig(os.path.join('generation_progress', filename), 
-                    format='png', 
-                    dpi=300,  # Standard high-quality DPI
-                    bbox_inches='tight',
-                    pad_inches=0.1)
+        plt.savefig(os.path.join('generation_progress', filename), format='png', dpi=300, bbox_inches='tight')
         plt.close()
+
+
 class Receiver:
     def __init__(self, device, sampler):
         self.device = device
