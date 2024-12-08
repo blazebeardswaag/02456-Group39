@@ -48,7 +48,7 @@ with context_manager(
         model.to(config.device)
     print(f"Model device: {next(unet_model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
-    trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
+    trainer = Trainer(unet=model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
     trainer.train(train_loader, num_epochs=1500)
     print("done training")
