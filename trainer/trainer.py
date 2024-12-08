@@ -17,7 +17,7 @@ except ImportError:
 
 
 class Trainer(nn.Module):
-    def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
+    def __init__(self, unet, config, sampler, image_generator, lr=1e-4):
         super().__init__()
         self.sampler = sampler
         self.unet = unet
