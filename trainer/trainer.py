@@ -55,7 +55,7 @@ class Trainer(nn.Module):
         eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
-        with torch.autocast(device_type=self.config.device, dtype=torch.float16):
+        with torch.autocast(device_type=self.config.device.type, dtype=torch.float16):
             pred_noise = self.unet(img_noise, t)
             loss = self.compute_loss(pred_noise, gen_noise)
 
