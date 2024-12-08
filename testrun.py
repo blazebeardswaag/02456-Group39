@@ -41,6 +41,11 @@ with context_manager(
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
     unet_model = Unet(config_model).to(config.device)
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(unet_model)
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        model = nn.DataParallel(unet_model)
+        model.to(config.device)
     print(f"Model device: {next(unet_model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
