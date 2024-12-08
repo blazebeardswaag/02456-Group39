@@ -81,7 +81,7 @@ class Trainer(nn.Module):
             data_loader.dataset,
             batch_size=data_loader.batch_size,
             shuffle=True,
-            num_workers=4,  # Use multiple CPU cores for data loading
+            num_workers=24,  # Use multiple CPU cores for data loading
             pin_memory=True,  # This is crucial for faster CPU->GPU transfer
             prefetch_factor=2,
             drop_last=True
