@@ -80,6 +80,15 @@ class Trainer(nn.Module):
         return loss.item()
 
     def train(self, data_loader, num_epochs):
+        # Reconfigure the dataloader for optimal GPU transfer
+        data_loader = DataLoader(
+            data_loader.dataset,
+            batch_size=data_loader.batch_size,
+            shuffle=True,
+            num_workers=8,  # Use multiple CPU cores for data loading
+            pin_memory=True,  # This is crucial for faster CPU->GPU transfer
+            prefetch_factor=2
+        )
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
         best_model_loss = 10
