@@ -21,8 +21,7 @@ with context_manager(
     experiment_name="CIFAR_Training",
     scheduler_type="linear",
     use_wandb=True,
-    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"),
-    drop_last=True
+    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:
     
     config_model =  {
