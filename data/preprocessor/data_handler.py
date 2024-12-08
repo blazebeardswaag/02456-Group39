@@ -13,7 +13,6 @@ def denormalize(tensor):
 def get_transform():
     transform = transforms.Compose([
         transforms.ToTensor(),               
-        transforms.Normalize((0.5,), (0.5,)) 
     ])
     return transform
 
@@ -21,7 +20,6 @@ def get_transform():
 def get_transform_cifar():
     transform = transforms.Compose([
         transforms.ToTensor(),               
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) 
     ])
     return transform
 
@@ -38,5 +36,3 @@ def load_CIFAR10_dataset(batch_size: int):
     train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
     return train_loader
-
-

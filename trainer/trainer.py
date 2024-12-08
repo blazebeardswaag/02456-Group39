@@ -48,6 +48,7 @@ class Trainer(nn.Module):
 
     def train_step(self, image, batch_idx):
         image = image.to(self.config.device)
+        image = (image.to(torch.float32) / 255. - 0.5) / 0.5  # Perform normalization on GPU
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
         
@@ -69,6 +70,7 @@ class Trainer(nn.Module):
         self.scaler.update()
 
         return loss.item()
+
 
 
     def train(self, data_loader, num_epochs):
