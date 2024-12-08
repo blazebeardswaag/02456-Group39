@@ -16,11 +16,11 @@ import argparse
 
 
 with context_manager(
-    batch_size=85,
-    LR=1e-2,
+    batch_size=32,
+    LR=1e-4,
     experiment_name="CIFAR_Training",
     scheduler_type="linear",
-    use_wandb=False,
+    use_wandb=True,
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:
     

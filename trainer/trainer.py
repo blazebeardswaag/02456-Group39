@@ -9,6 +9,12 @@ from utils.image_saver import ImageSaver
 import os
 
 
+try:
+    import wandb
+except ImportError:
+    print("Run `pip install wandb` to enable wandb logging, it's not enabled!")
+
+
 class Trainer(nn.Module):
     def __init__(self, unet, config, sampler, image_generator, lr=1e-3):
         super().__init__()
@@ -21,6 +27,18 @@ class Trainer(nn.Module):
         self.image_saver = ImageSaver()
         self.save_frequency = 100
         self.clip_value = 1.0
+        self.use_wandb = getattr(config, 'use_wandb', False)
+        print(self.use_wandb)
+
+
+
+        wandb.init(
+            project=getattr(config, 'wandb_project', 'cifar10'),
+            config=config.__dict__,
+            resume="allow",
+            mode='online'
+        )
+        wandb.watch(self.unet, log="all", log_freq=10)
 
 
     def compute_loss(self, gen_noise, predicted_noise):
@@ -70,16 +88,25 @@ class Trainer(nn.Module):
             for batch_idx, batch in enumerate(data_loader):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
+                wandb.log({"batch loss": loss})
                 epoch_loss += loss
 
             avg_loss = epoch_loss / len(data_loader)
+            # log avg loss to wandb
+            if self.use_wandb and WANDB_AVAILABLE:
+                wandb.log({"loss": avg_loss, "epoch": epoch})
             if avg_loss< best_model_loss: 
                 best_model_loss = avg_loss 
                 torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
+                wandb.save(self.config.MODEL_OUTPUT_PATH)
+                wandb.log({"best_loss": best_model_loss, "epoch": epoch})
                 print(f"Best model loss: {best_model_loss}\nsaved to: {self.config.MODEL_OUTPUT_PATH}")
 
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
 
+
+
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
-      
+        wandb.save(self.config.MODEL_OUTPUT_PATH)
+        wandb.finish()
