@@ -7,7 +7,7 @@ from utils.helpers import (
     gaussian_discrete_decoder,
     discrete_decoder
 )
-from torch.amp import autocast
+#from torch.amp import autocast
 from data.preprocessor.data_handler import denormalize, get_transform_cifar
 from sampler.image_generator import ImageGenerator
 from sampler.sampler import Sampler
@@ -20,6 +20,7 @@ import os
 import sys
 import numpy as np
 import cv2
+
 
 class Invoker:
     def __init__(self, device, sampler):
@@ -164,8 +165,9 @@ def load_model(device, model_path="./CIFAR_Transform"):
             "num_up_layers": 2,
             "num_heads": 4,
         }
- 
-        model = Unet(config_model).to(device)
+
+        model = torch.nn.DataParallel(Unet(config_model))
+        model = model.to(device)
         model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
         model.eval()
     except Exception as e:
@@ -179,7 +181,7 @@ async def main():
 
     with context_manager(
         batch_size=1,
-        LR=1e-4,
+        LR=3e-4,
         experiment_name="mnist_training",
         scheduler_type="linear",
         device=device
