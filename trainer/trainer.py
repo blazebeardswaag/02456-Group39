@@ -30,6 +30,7 @@ class Trainer(nn.Module):
         self.clip_value = 1.0
         self.use_wandb = getattr(config, 'use_wandb', False)
         self.scaler = GradScaler()
+        self.patience = 10
         print(self.use_wandb)
 
 
@@ -87,7 +88,8 @@ class Trainer(nn.Module):
         )
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
-        best_model_loss = 10
+        best_loss = float('inf')
+        epochs_without_improvement = 0
 
         for epoch in range(num_epochs):
             epoch_loss = 0.0
@@ -97,15 +99,23 @@ class Trainer(nn.Module):
                 wandb.log({"batch loss": loss})
                 epoch_loss += loss
 
+
             avg_loss = epoch_loss / len(data_loader)
             # log avg loss to wandb
             wandb.log({"loss": avg_loss, "epoch": epoch})
-            if avg_loss< best_model_loss: 
-                best_model_loss = avg_loss 
+
+            #early stopping logic
+            if avg_loss < best_loss:
+                best_loss = avg_loss
                 torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
                 wandb.save(self.config.MODEL_OUTPUT_PATH)
-                wandb.log({"best_loss": best_model_loss, "epoch": epoch})
-                print(f"Best model loss: {best_model_loss}\nsaved to: {self.config.MODEL_OUTPUT_PATH}")
+                wandb.log({"best_loss": best_loss, "epoch": epoch})
+                epochs_without_improvement = 0
+            else:
+                epochs_without_improvement += 1
+                if epochs_without_improvement >= self.patience:
+                    print(f"Stopping early due to no improvement in {self.patience} epochs.\n Best loss: {best_loss:.4f}")
+                    break
 
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
 
