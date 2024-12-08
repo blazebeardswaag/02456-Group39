@@ -73,14 +73,18 @@ class Sender:
         fig, axs = plt.subplots(rows, cols, figsize=(cols * 4, rows * 4), dpi=100)
         axs = axs.flatten() if num_images > 1 else [axs]  # Flatten in case of a single image
 
+        # Essoteric mean and std values for normalization
+        mean = torch.tensor([0.4914, 0.4822, 0.4465])
+        std = torch.tensor([0.2470, 0.2435, 0.2616])
+
         for idx, img in enumerate(images):
             if isinstance(img, torch.Tensor):
-                # Convert to numpy and move channels to the last dimension
+                img = img * std[:, None, None] + mean[:, None, None]
                 img = img.detach().cpu().numpy()
                 img = img.transpose(1, 2, 0)  # CHW -> HWC
 
-                # Normalize to [0, 1] range
-                img = (img - img.min()) / (img.max() - img.min() + 1e-8)
+                # Clip to [0, 1] range for visualization
+                img = np.clip(img, 0, 1)
 
             # Display the image
             axs[idx].imshow(img, extent=(0, 32, 0, 32))  # Explicitly set dimensions
