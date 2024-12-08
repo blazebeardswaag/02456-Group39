@@ -28,7 +28,6 @@ class Trainer(nn.Module):
         self.save_frequency = 100
         self.clip_value = 1.0
         self.use_wandb = getattr(config, 'use_wandb', False)
-        self.scaler = GradScaler()
         self.patience = 10
         print(self.use_wandb)
 
