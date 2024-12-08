@@ -32,7 +32,6 @@ class Trainer(nn.Module):
         print(self.use_wandb)
 
 
-
         wandb.init(
             project=getattr(config, 'wandb_project', 'cifar10'),
             config=config.__dict__,
@@ -47,7 +46,12 @@ class Trainer(nn.Module):
 
     def train_step(self, image, batch_idx):
         image = image.to(self.config.device)
-        image = (image - 0.5) / 0.5
+
+        # Normalize with essoteric values
+        mean = torch.tensor([0.4914, 0.4822, 0.4465], device=self.config.device)
+        std = torch.tensor([0.2470, 0.2435, 0.2616], device=self.config.device)
+        image = (image - mean[None, :, None, None]) / std[None, :, None, None]
+
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
         
@@ -73,8 +77,6 @@ class Trainer(nn.Module):
              #   print(f"{name}: grad=None")
 
         # Gradient clipping
-  
-  
   
         torch.nn.utils.clip_grad_norm_(self.unet.parameters(), max_norm=self.clip_value)
         self.optimizer.step()
@@ -125,8 +127,6 @@ class Trainer(nn.Module):
                     break
 
             print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
-
-
 
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
