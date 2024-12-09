@@ -16,7 +16,7 @@ import argparse
 
 
 with context_manager(
-    batch_size=64,
+    batch_size=32,
     LR=1e-4,
     experiment_name="CIFAR_Training",
     scheduler_type="linear",
@@ -27,13 +27,13 @@ with context_manager(
     config_model = {
         "im_channels": 3,
         "im_size": 32,
-        "down_channels": [128, 256, 512],
-        "mid_channels": [512, 512, 256],
-        "down_sample": [True, False],
-        "time_emb_dim": 512,
-        "num_down_layers": 8,
-        "num_mid_layers": 1,
-        "num_up_layers": 8,
+        "down_channels": [32, 64, 128, 256, 256], 
+        "mid_channels": [256, 256, 128],
+        "down_sample": [True, True, True, False],
+        "time_emb_dim": 256,
+        "num_down_layers": 4,
+        "num_mid_layers": 2,
+        "num_up_layers": 4,
         "num_heads": 4,
     }
 
