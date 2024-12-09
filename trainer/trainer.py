@@ -52,7 +52,7 @@ class Trainer(nn.Module):
         # Normalize with essoteric values
         mean = torch.tensor([0.4914, 0.4822, 0.4465], device=self.config.device)
         std = torch.tensor([0.2470, 0.2435, 0.2616], device=self.config.device)
-        image = (image - mean[None, :, None, None]) / std[None, :, None, None]
+        image = (image - mean[:, None, None]) / std[:, None, None]
         
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
