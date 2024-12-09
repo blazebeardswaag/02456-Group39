@@ -31,7 +31,6 @@ class Trainer(nn.Module):
         self.clip_value = 1.0
         self.use_wandb = getattr(config, 'use_wandb', False)
         self.patience = 10
-        self.scaler = GradScaler()
         print(self.use_wandb)
 
 
@@ -95,7 +94,7 @@ class Trainer(nn.Module):
             data_loader.dataset,
             batch_size=data_loader.batch_size,
             shuffle=True,
-            num_workers=24,  # Use multiple CPU cores for data loading
+            num_workers=8,  # Use multiple CPU cores for data loading
             pin_memory=True,  # This is crucial for faster CPU->GPU transfer
             prefetch_factor=2,
             drop_last=True
