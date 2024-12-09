@@ -6,7 +6,9 @@ from models.unet import ScoreNetwork0 as UNet
 from sampler.sampler import Sampler
 from sampler.image_generator import ImageGenerator
 from utils.image_saver import ImageSaver
+from torch.cuda.amp import GradScaler
 import os
+
 
 
 try:
@@ -29,6 +31,7 @@ class Trainer(nn.Module):
         self.clip_value = 1.0
         self.use_wandb = getattr(config, 'use_wandb', False)
         self.patience = 10
+        self.scaler = GradScaler()
         print(self.use_wandb)
 
 
@@ -59,27 +62,19 @@ class Trainer(nn.Module):
         eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
-        #img_noise  = img_noise.view(img_noise.shape[0], -1)
-        pred_noise = self.unet(img_noise, t)
-        #gen_noise = gen_noise.view(gen_noise.shape[0], -1)
-        loss = self.compute_loss(pred_noise, gen_noise)
+        with torch.autocast(device_type=self.config.device, dtype=torch.float16):
+            pred_noise = self.unet(img_noise, t)
+            loss = self.compute_loss(pred_noise, gen_noise)
 
         self.optimizer.zero_grad()
-        loss.backward()
+        self.scaler.scale(loss).backward()
 
-       # print(f"Batch {batch_idx}, Gradients:")
-       # for name, param in self.unet.named_parameters():
-        #    if param.grad is not None:
-         #       print(f"{name}: mean={param.grad.abs().mean().item():.6f}, "
-          #              f"max={param.grad.abs().max().item():.6f}, "
-           #             f"min={param.grad.abs().min().item():.6f}")
-            #else:
-             #   print(f"{name}: grad=None")
-
-        # Gradient clipping
-  
+        self.scaler.unscale_(self.optimizer)
         torch.nn.utils.clip_grad_norm_(self.unet.parameters(), max_norm=self.clip_value)
-        self.optimizer.step()
+        
+        self.scaler.step(self.optimizer)
+        self.scaler.update()
+
         return loss.item()
 
 
