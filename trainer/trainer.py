@@ -89,6 +89,10 @@ class Trainer(nn.Module):
 
     def train(self, data_loader, num_epochs):
 
+        transform = transforms.Compose([
+        transforms.ToTensor(),               
+        ])
+
         # Reconfigure the dataloader for optimal GPU transfer
         data_loader = DataLoader(
             data_loader.dataset,
@@ -98,9 +102,7 @@ class Trainer(nn.Module):
             pin_memory=True,  # This is crucial for faster CPU->GPU transfer
             prefetch_factor=2,
             drop_last=True,
-            transform = transforms.Compose([
-            transforms.ToTensor(),               
-        ])
+            transform = transform
         )
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
