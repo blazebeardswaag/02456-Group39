@@ -24,17 +24,17 @@ with context_manager(
     device=torch.device("cuda")
 ) as config:
     
-    config_model =  {
+    config_model = {
         "im_channels": 3,
         "im_size": 32,
-        "down_channels": [32, 64, 128, 256],
-        "mid_channels": [256, 256, 128],
-        "down_sample": [True, True, False],
-        "time_emb_dim": 128,
-        "num_down_layers": 2,
-        "num_mid_layers": 2,
-        "num_up_layers": 2,
-        "num_heads": 4,
+        "down_channels": [64, 128, 256, 512],
+        "mid_channels": [512, 512, 256],
+        "down_sample": [True, True, True],
+        "time_emb_dim": 512,
+        "num_down_layers": 4,
+        "num_mid_layers": 4,
+        "num_up_layers": 4,
+        "num_heads": 8,
     }
 
     train_loader = load_CIFAR10_dataset(config.batch_size)
