@@ -54,7 +54,7 @@ class Trainer(nn.Module):
         mean = torch.tensor([0.4914, 0.4822, 0.4465], device=self.config.device)
         std = torch.tensor([0.2470, 0.2435, 0.2616], device=self.config.device)
         image = (image - mean[None, :, None, None]) / std[None, :, None, None]
-
+        
         t = self.sampler.sample_time_step()
         t = t.to(self.config.device)
         
@@ -62,19 +62,29 @@ class Trainer(nn.Module):
         eps = torch.randn_like(image, device=self.config.device)  
         img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
 
-        with torch.autocast(device_type=self.config.device.type, dtype=torch.float16):
-            pred_noise = self.unet(img_noise, t)
-            loss = self.compute_loss(pred_noise, gen_noise)
+        #img_noise  = img_noise.view(img_noise.shape[0], -1)
+        pred_noise = self.unet(img_noise, t)
+        #gen_noise = gen_noise.view(gen_noise.shape[0], -1)
+        loss = self.compute_loss(pred_noise, gen_noise)
 
         self.optimizer.zero_grad()
-        self.scaler.scale(loss).backward()
+        loss.backward()
 
-        self.scaler.unscale_(self.optimizer)
+       # print(f"Batch {batch_idx}, Gradients:")
+       # for name, param in self.unet.named_parameters():
+        #    if param.grad is not None:
+         #       print(f"{name}: mean={param.grad.abs().mean().item():.6f}, "
+          #              f"max={param.grad.abs().max().item():.6f}, "
+           #             f"min={param.grad.abs().min().item():.6f}")
+            #else:
+             #   print(f"{name}: grad=None")
+
+        # Gradient clipping
+  
+  
+  
         torch.nn.utils.clip_grad_norm_(self.unet.parameters(), max_norm=self.clip_value)
-        
-        self.scaler.step(self.optimizer)
-        self.scaler.update()
-
+        self.optimizer.step()
         return loss.item()
 
 
