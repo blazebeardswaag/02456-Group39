@@ -40,10 +40,10 @@ with context_manager(
     train_loader = load_CIFAR10_dataset(config.batch_size)
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
-    unet_model = Unet(config_model).to(config.device)
+    model = Unet(config_model).to(config.device)
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
-        model = nn.DataParallel(unet_model)
+        model = nn.DataParallel(model)
         model.to(config.device)
     print(f"Model device: {next(model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
