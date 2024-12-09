@@ -27,8 +27,8 @@ with context_manager(
     config_model = {
         "im_channels": 3,
         "im_size": 32,
-        "down_channels": [32, 64, 128, 256, 256], 
-        "mid_channels": [256, 256, 128],
+        "down_channels": [32, 64, 128, 512], 
+        "mid_channels": [512, 512, 128],
         "down_sample": [True, True, True, False],
         "time_emb_dim": 256,
         "num_down_layers": 4,
