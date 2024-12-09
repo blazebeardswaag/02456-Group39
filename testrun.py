@@ -21,7 +21,7 @@ with context_manager(
     experiment_name="CIFAR_Training",
     scheduler_type="linear",
     use_wandb=True,
-    device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device=torch.device("cuda")
 ) as config:
     
     config_model =  {
@@ -45,7 +45,7 @@ with context_manager(
         print("Let's use", torch.cuda.device_count(), "GPUs!")
         model = nn.DataParallel(unet_model)
         model.to(config.device)
-    print(f"Model device: {next(unet_model.parameters()).device}")
+    print(f"Model device: {next(model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
