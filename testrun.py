@@ -16,7 +16,7 @@ import argparse
 
 
 with context_manager(
-    batch_size=16,
+    batch_size=64,
     LR=1e-4,
     experiment_name="CIFAR_Training",
     scheduler_type="linear",
