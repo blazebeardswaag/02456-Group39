@@ -6,7 +6,9 @@ from models.unet import ScoreNetwork0 as UNet
 from sampler.sampler import Sampler
 from sampler.image_generator import ImageGenerator
 from utils.image_saver import ImageSaver
+from data.preprocessor import Transform 
 from torch.cuda.amp import GradScaler
+from torchvision import transforms
 import os
 
 
@@ -86,8 +88,15 @@ class Trainer(nn.Module):
         self.optimizer.step()
         return loss.item()
 
+    def get_transform_cifar():
+        transform = transforms.Compose([
+            transforms.ToTensor(),               
+        ])
+        return transform
+        
 
     def train(self, data_loader, num_epochs):
+        transform = self.get_transform_cifar()
 
         # Reconfigure the dataloader for optimal GPU transfer
         data_loader = DataLoader(
@@ -97,7 +106,8 @@ class Trainer(nn.Module):
             num_workers=8,  # Use multiple CPU cores for data loading
             pin_memory=True,  # This is crucial for faster CPU->GPU transfer
             prefetch_factor=2,
-            drop_last=True
+            drop_last=True,
+            transform=transform
         )
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size

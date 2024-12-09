@@ -31,9 +31,9 @@ with context_manager(
         "mid_channels": [256, 256, 128], 
         "down_sample": [True, True],      
         "time_emb_dim": 256,              
-        "num_down_layers": 1,             
+        "num_down_layers": 4,             
         "num_mid_layers": 1,              
-        "num_up_layers": 1,              
+        "num_up_layers": 4,              
         "num_heads": 4,                   
     }
 
