@@ -90,7 +90,7 @@ class Trainer(nn.Module):
     def train(self, data_loader, num_epochs):
 
         # Reconfigure the dataloader for optimal GPU transfer
-        data_loader = DataLoader(
+        data_loader2 = DataLoader(
             data_loader.dataset,
             batch_size=data_loader.batch_size,
             shuffle=True,
@@ -100,20 +100,20 @@ class Trainer(nn.Module):
             drop_last=True,
         )
         self.config.num_epochs = num_epochs
-        self.config.batch_size = data_loader.batch_size
+        self.config.batch_size = data_loader2.batch_size
         best_loss = float('inf')
         epochs_without_improvement = 0
 
         for epoch in range(num_epochs):
             epoch_loss = 0.0
-            for batch_idx, batch in enumerate(data_loader):
+            for batch_idx, batch in enumerate(data_loader2):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
                 wandb.log({"batch loss": loss})
                 epoch_loss += loss
 
 
-            avg_loss = epoch_loss / len(data_loader)
+            avg_loss = epoch_loss / len(data_loader2)
             # log avg loss to wandb
             wandb.log({"loss": avg_loss, "epoch": epoch})
 
