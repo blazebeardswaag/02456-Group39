@@ -29,7 +29,7 @@ with context_manager(
         "im_size": 32,
         "down_channels": [32, 64, 128, 512], 
         "mid_channels": [512, 512, 128],
-        "down_sample": [True, True, True, False],
+        "down_sample": [True, True, False],
         "time_emb_dim": 256,
         "num_down_layers": 4,
         "num_mid_layers": 2,
