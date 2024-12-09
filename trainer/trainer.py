@@ -87,15 +87,7 @@ class Trainer(nn.Module):
         self.optimizer.step()
         return loss.item()
 
-    def get_transform_cifar():
-        transform = transforms.Compose([
-            transforms.ToTensor(),               
-        ])
-        return transform
-        
-
     def train(self, data_loader, num_epochs):
-        transform = self.get_transform_cifar()
 
         # Reconfigure the dataloader for optimal GPU transfer
         data_loader = DataLoader(
@@ -106,7 +98,9 @@ class Trainer(nn.Module):
             pin_memory=True,  # This is crucial for faster CPU->GPU transfer
             prefetch_factor=2,
             drop_last=True,
-            transform=transform
+            transform = transforms.Compose([
+            transforms.ToTensor(),               
+        ])
         )
         self.config.num_epochs = num_epochs
         self.config.batch_size = data_loader.batch_size
