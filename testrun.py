@@ -32,7 +32,7 @@ with context_manager(
         "down_sample": [True, False],
         "time_emb_dim": 512,
         "num_down_layers": 8,
-        "num_mid_layers": 8,
+        "num_mid_layers": 1,
         "num_up_layers": 8,
         "num_heads": 4,
     }
