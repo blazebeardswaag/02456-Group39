@@ -13,44 +13,61 @@ from torch.utils.data import Subset
 from configs.config_manager import context_manager
 from data.preprocessor.data_handler import load_MNIST_dataset, load_CIFAR10_dataset
 import argparse
+import modal
 
+# Define the Modal app
+app = modal.App("lets-go")
 
-with context_manager(
-    batch_size=400,
-    LR=2e-4,
-    experiment_name="CIFAR_Training",
-    scheduler_type="linear",
-    use_wandb=True,
-    device=torch.device("cuda")
-) as config:
-    
-    config_model = {
-        "im_channels": 3,  
-        "im_size": 32,    
-        "down_channels": [32, 64, 128, 256],  
-        "mid_channels": [256, 256, 128], 
-        "down_sample": [True, True, False],      
-        "time_emb_dim": 256,              
-        "num_down_layers": 4,             
-        "num_mid_layers": 2,              
-        "num_up_layers": 4,              
-        "num_heads": 4,                   
-    }
+# GPU-backed image to run the code
+@app.function(
+        gpu="H100", 
+        timeout=3600,         
+        secrets=[modal.Secret.from_name(
+        "wandb-secret", required_keys=["WANDB_API_KEY"]
+        )],
+        image=modal.Image.debian_slim().pip_install_from_requirements("requirements.txt"))
+def run_training():
+    with context_manager(
+        batch_size=512,
+        LR=2e-4,
+        experiment_name="CIFAR_Training",
+        scheduler_type="linear",
+        use_wandb=True,
+        device=torch.device("cuda")
+    ) as config:
+        
+        config_model = {
+            "im_channels": 3,  
+            "im_size": 32,    
+            "down_channels": [32, 64, 128, 256],  
+            "mid_channels": [256, 256, 128], 
+            "down_sample": [True, True, False],      
+            "time_emb_dim": 256,              
+            "num_down_layers": 4,             
+            "num_mid_layers": 2,              
+            "num_up_layers": 4,              
+            "num_heads": 4,                   
+        }
 
-    train_loader = load_CIFAR10_dataset(config.batch_size)
-    val_loader = load_CIFAR10_dataset(config.batch_size)
-    print("sampling data")
-    sampler = Sampler(config, config.batch_size)
-    model = Unet(config_model).to(config.device)
-    if torch.cuda.device_count() > 1:
-        print("Let's use", torch.cuda.device_count(), "GPUs!")
-        model = nn.DataParallel(model)
-        model.to(config.device)
-    print(f"Model device: {next(model.parameters()).device}")
-    image_generator = ImageGenerator(sampler, config.device)
-    trainer = Trainer(unet=model, config=config, sampler=sampler, image_generator=image_generator)
-    print("training")
-    trainer.train(train_loader, val_loader, num_epochs=1500)
-    print("done training")
+        train_loader = load_CIFAR10_dataset(config.batch_size)
+        val_loader = load_CIFAR10_dataset(config.batch_size)
+        print("Sampling data")
+        sampler = Sampler(config, config.batch_size)
+        model = Unet(config_model).to(config.device)
 
-    
+        if torch.cuda.device_count() > 1:
+            print("Let's use", torch.cuda.device_count(), "GPUs!")
+            model = nn.DataParallel(model)
+            model.to(config.device)
+        
+        print(f"Model device: {next(model.parameters()).device}")
+        image_generator = ImageGenerator(sampler, config.device)
+        trainer = Trainer(unet=model, config=config, sampler=sampler, image_generator=image_generator)
+        
+        print("Training")
+        trainer.train(train_loader, val_loader, num_epochs=1500)
+        print("Done training")
+
+if __name__ == "__main__":
+    with app.run():
+        run_training()
