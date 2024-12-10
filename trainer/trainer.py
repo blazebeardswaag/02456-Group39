@@ -28,7 +28,7 @@ class Trainer(nn.Module):
         self.save_frequency = 100
         self.clip_value = 1.0
         self.use_wandb = getattr(config, 'use_wandb', False)
-        self.patience = 10
+        self.patience = 1500
         print(self.use_wandb)
 
         wandb.init(
@@ -128,16 +128,16 @@ class Trainer(nn.Module):
                 epoch_loss += loss
 
             avg_train_loss = epoch_loss / len(train_loader)
-            avg_val_loss = self.validate(val_loader)  # Evaluate on validation set
+            #avg_val_loss = self.validate(val_loader)  # Evaluate on validation set
 
             #wandb.log({"train loss": avg_train_loss, "val loss": avg_val_loss, "epoch": epoch})
 
             # Early stopping logic
-            if avg_val_loss < best_loss:
-                best_loss = avg_val_loss
+            if avg_train_loss < best_loss:
+                best_loss = avg_train_loss
                 torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
                 wandb.save(self.config.MODEL_OUTPUT_PATH)
-                wandb.log({"train loss": avg_train_loss, "val loss": avg_val_loss, "epoch": epoch})
+                wandb.log({"train loss": avg_train_loss, "epoch": epoch})
                 epochs_without_improvement = 0
             else:
                 epochs_without_improvement += 1
@@ -145,7 +145,7 @@ class Trainer(nn.Module):
                     print(f"Stopping early due to no improvement in {self.patience} epochs.\n Best val loss: {best_loss:.4f}")
                     break
 
-            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+            print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {avg_train_loss:.4f}")
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
         wandb.save(self.config.MODEL_OUTPUT_PATH)

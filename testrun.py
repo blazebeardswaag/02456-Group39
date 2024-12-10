@@ -21,7 +21,7 @@ app = modal.App("lets-go")
 # GPU-backed image to run the code
 @app.function(
         gpu="H100", 
-        timeout=3600,         
+        timeout=86400,         
         secrets=[modal.Secret.from_name(
         "wandb-secret", required_keys=["WANDB_API_KEY"]
         )],
@@ -42,7 +42,7 @@ def run_training():
             "down_channels": [32, 64, 128, 256],  
             "mid_channels": [256, 256, 128], 
             "down_sample": [True, True, False],      
-            "time_emb_dim": 256,              
+            "time_emb_dim": 128,              
             "num_down_layers": 4,             
             "num_mid_layers": 2,              
             "num_up_layers": 4,              
