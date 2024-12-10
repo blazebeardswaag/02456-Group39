@@ -28,7 +28,7 @@ app = modal.App("lets-go")
         image=modal.Image.debian_slim().pip_install_from_requirements("requirements.txt"))
 def run_training():
     with context_manager(
-        batch_size=512,
+        batch_size=300,
         LR=2e-4,
         experiment_name="CIFAR_Training",
         scheduler_type="linear",
