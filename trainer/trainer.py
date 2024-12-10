@@ -111,6 +111,7 @@ class Trainer(nn.Module):
             num_workers=8,
             pin_memory=True,
             prefetch_factor=2,
+            drop_last=True,
         )
 
         self.config.num_epochs = num_epochs
