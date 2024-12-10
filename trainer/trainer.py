@@ -31,7 +31,7 @@ class Trainer(nn.Module):
         self.save_frequency = 100
         self.clip_value = 1.0
         self.use_wandb = getattr(config, 'use_wandb', False)
-        self.patience = 10
+        self.patience = 1500
         print(self.use_wandb)
 
 
@@ -80,8 +80,6 @@ class Trainer(nn.Module):
              #   print(f"{name}: grad=None")
 
         # Gradient clipping
-  
-  
   
         torch.nn.utils.clip_grad_norm_(self.unet.parameters(), max_norm=self.clip_value)
         self.optimizer.step()
