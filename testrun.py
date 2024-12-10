@@ -38,6 +38,7 @@ with context_manager(
     }
 
     train_loader = load_CIFAR10_dataset(config.batch_size)
+    val_loader = load_CIFAR10_dataset(config.batch_size)
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
     model = Unet(config_model).to(config.device)
@@ -49,7 +50,7 @@ with context_manager(
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
-    trainer.train(train_loader, num_epochs=1500)
+    trainer.train(train_loader, val_loader, num_epochs=1500)
     print("done training")
 
     
