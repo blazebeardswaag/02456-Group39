@@ -157,20 +157,20 @@ def load_model(device, model_path="./CIFAR_Transform"):
         raise FileNotFoundError(f"Model file not found at {model_path}")
 
     try:
-        config_model =  {
-            "im_channels": 3,
-            "im_size": 32,
-            "down_channels": [32, 64, 128, 256],
-            "mid_channels": [256, 256, 128],
-            "down_sample": [True, True, False],
-            "time_emb_dim": 128,
-            "num_down_layers": 2,
-            "num_mid_layers": 2,
-            "num_up_layers": 2,
-            "num_heads": 4,
+        config_model = {
+            "im_channels": 3,  
+            "im_size": 32,    
+            "down_channels": [32, 64, 128, 256],  
+            "mid_channels": [256, 256, 128], 
+            "down_sample": [True, True, False],      
+            "time_emb_dim": 128,              
+            "num_down_layers": 4,             
+            "num_mid_layers": 2,              
+            "num_up_layers": 4,              
+            "num_heads": 4,                   
         }
 
-        model = torch.nn.DataParallel(Unet(config_model))
+        model = Unet(config_model).to(device)
         model = model.to(device)
         model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
         model.eval()
