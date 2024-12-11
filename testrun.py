@@ -25,7 +25,8 @@ with context_manager(
 ) as config:
     
     print("loading data")
-    train_loader = load_MNIST_dataset(config.batch_size)
+    train_loader = load_MNIST_dataset(config.batch_size, train=True)
+    val_loader = load_MNIST_dataset(config.batch_size, train=False)
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
     unet_model = UNet().to(config.device)

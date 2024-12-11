@@ -71,29 +71,74 @@ class Trainer(nn.Module):
 
         return loss.item()
 
-    def train(self, data_loader, num_epochs):
+    def validation_step(self, image, batch_idx):
+        self.unet.eval()  
+        with torch.no_grad():
+            image = image.to(self.config.device)
+            t = self.sampler.sample_time_step()
+            t = t.to(self.config.device)
+            
+            alpha_bar = self.sampler.get_alpha_bar_t(t).to(self.config.device) 
+            eps = torch.randn_like(image, device=self.config.device)  
+            
+            img_noise, gen_noise = self.image_generator.sample_img_at_t(t, image, alpha_bar, eps)
+            
+            flattened_x = img_noise.view(img_noise.shape[0], -1)
+            gen_noise = gen_noise.view(gen_noise.size(0), -1)
+            
+            pred_noise = self.unet(flattened_x, t)
+            loss = self.compute_loss(pred_noise, gen_noise)
+            
+        self.unet.train()  # Set model back to training mode
+        return loss.item()
+
+    def train(self, train_loader, val_loader, num_epochs):
         self.config.num_epochs = num_epochs
-        self.config.batch_size = data_loader.batch_size
-        best_model_loss = 10
+        self.config.batch_size = train_loader.batch_size
+        best_model_loss = float('inf')
+        
         for epoch in range(num_epochs):
-            epoch_loss = 0.0
-            for batch_idx, batch in enumerate(data_loader):
+            # Training phase
+            self.unet.train()
+            train_loss = 0.0
+            for batch_idx, batch in enumerate(train_loader):
                 images, _ = batch
                 loss = self.train_step(images, batch_idx)
-                epoch_loss += loss
+                train_loss += loss
 
-            avg_loss = epoch_loss / len(data_loader)
-            if avg_loss< best_model_loss: 
-                best_model_loss = avg_loss 
+            avg_train_loss = train_loss / len(train_loader)
+            
+            # Validation phase
+            val_loss = 0.0
+            for batch_idx, batch in enumerate(val_loader):
+                images, _ = batch
+                loss = self.validation_step(images, batch_idx)
+                val_loss += loss
+                
+            avg_val_loss = val_loss / len(val_loader)
+            
+            # Save best model based on validation loss
+            if avg_val_loss < best_model_loss: 
+                best_model_loss = avg_val_loss
                 torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
                 print(f"Best model loss: {best_model_loss}\nsaved to: {self.config.MODEL_OUTPUT_PATH}")
 
-            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+            print(f"\n{'='*50}")
+            print(f"Epoch [{epoch+1}/{num_epochs}]")
+            print(f"Training Loss:   {avg_train_loss:.6f}")
+            print(f"Validation Loss: {avg_val_loss:.6f}")
+            if avg_val_loss < best_model_loss:
+                print(f"Best model loss: {best_model_loss:.6f}")
+                print(f"Saved to: {self.config.MODEL_OUTPUT_PATH}")
+            print(f"{'='*50}\n")
 
-            # log avg loss to wandb
+            # log losses to wandb
             if self.use_wandb and WANDB_AVAILABLE:
-                wandb.log({"epoch_loss": avg_loss, "epoch": epoch+1})
-
+                wandb.log({
+                    "train_loss": avg_train_loss,
+                    "val_loss": avg_val_loss,
+                    "epoch": epoch+1
+                })
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
         if self.use_wandb and WANDB_AVAILABLE:
