@@ -13,7 +13,7 @@ class Sampler:
 
     def sample_time_step(self):
 
-        t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size, 1), device=self.config.device)
+        t = torch.randint(low=1, high=self.config.MAX_STEPS, size=(self.batch_size, ), device=self.config.device)
         return t
 
 

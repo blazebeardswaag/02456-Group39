@@ -10,7 +10,7 @@ from sampler.image_generator import ImageGenerator
 from torchvision import datasets, transforms
 from torch.utils.data import Subset
 from configs.config_manager import context_manager
-from data.preprocessor.data_handler import load_MNIST_dataset
+from data.preprocessor.data_handler import load_MNIST_dataset, load_CIFAR_dataset
 import wandb
 import argparse
 
@@ -21,6 +21,7 @@ with context_manager(
     experiment_name="CIFAR_Training",
     scheduler_type="linear",
     use_wandb=True,
+    MODEL_OUTPUT_PATH = "cry baby",
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:
     
@@ -40,8 +41,8 @@ with context_manager(
 
     
     print("loading data")
-    train_loader = load_MNIST_dataset(config.batch_size, train=True)
-    val_loader = load_MNIST_dataset(config.batch_size, train=False)
+    train_loader = load_CIFAR_dataset(config.batch_size, train=True)
+    val_loader = load_CIFAR_dataset(config.batch_size, train=False)
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
     unet_model = Unet(config_model).to(config.device)
@@ -49,5 +50,5 @@ with context_manager(
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)
     print("training")
-    trainer.train(train_loader, num_epochs=100)
+    trainer.train(train_loader, val_loader, num_epochs=350)
     print("done training")

@@ -43,23 +43,12 @@ def load_model(device, model_path="model_serialzed"):
     return model
 
 
-<<<<<<< Updated upstream
-def initialize_image(size=(28, 28)):
-
-        SIZE = torch.zeros(size)
-        x_t = torch.randn_like(SIZE)
-        x_t = (x_t + 1) / 2  # Normalize to [0, 1]
-
-        return x_t
-
-=======
 def initialize_image(size=(28, 28), channels=3):
     
-    SIZE = (channels, *size)  # This creates a tuple like (3, 28, 28) for RGB images
+    SIZE = (channels, *size)  
     x_t = torch.randn(SIZE)   # Use torch.randn() to create a tensor with the specified size
     return x_t
     
->>>>>>> Stashed changes
 
 def generate_single_image(image_idx, model, sampler, x_t):
  
@@ -99,8 +88,12 @@ def show_images_cv2(frames, metadata, scale_factor=9, final=False):
             frame = frame.detach().cpu().numpy()
 
         # Normalize to [0, 1] and then scale to [0, 255]
+        print(f" min and max before scaling and normalizing min : {frame.min()}, max : {frame.max()}")
+        print(f"frame shape: {frame.shape}")
         frame = ((frame + 1) / 2) * 255.0
-        frame = np.clip(frame, 0, 255).astype(np.uint8)
+
+        #frame = np.clip(frame, 0, 255).astype(np.uint8)
+        print(f" min and max after scaling and normalizing min : {frame.min()}, max : {frame.max()}")
 
         # Ensure grayscale image
         if frame.ndim == 2:  # Single-channel grayscale
@@ -115,7 +108,7 @@ def show_images_cv2(frames, metadata, scale_factor=9, final=False):
 
         font = cv2.FONT_HERSHEY_SIMPLEX
         font_scale = 0.5
-        color = (255, 255, 255) 
+        color = (0, 0, 255) 
         thickness = 1
         position = (10, 20)
 
@@ -164,6 +157,32 @@ def create_image_grid(images, cols):
 
     return grid
 
+from torch.distributions.normal import Normal
+
+def gaussian_discrete_decoder(x_continuous, mu, sigma, num_bins=256):
+    C, H, W = x_continuous.shape
+    x_centered = (x_continuous - mu) / (sigma + 1e-8)
+    bin_width = 2.0 / num_bins
+    bin_edges = torch.linspace(-1, 1 + bin_width, num_bins + 1).to(x_continuous.device)
+    gaussian = Normal(x_centered.unsqueeze(-1), 1.0)
+    cdf_values = gaussian.cdf(bin_edges)
+    bin_probs = cdf_values[..., 1:] - cdf_values[..., :-1]
+    x_discrete = torch.argmax(bin_probs, dim=-1)
+    x_discrete = torch.clamp(x_discrete, 0, num_bins - 1)
+    return x_discrete.to(torch.uint8)
+
+
+def discrete_decoder(x_continuous, num_bins=256):
+        
+        x_scaled = (x_continuous + 1) * (num_bins - 1) / 2.0  # Scale to [0, 255]
+        # Round to nearest discrete integer bin
+        x_discrete = torch.round(x_scaled)
+        # Clip values to ensure they're within [0, num_bins - 1]
+        x_discrete = torch.clamp(x_discrete, min=0, max=num_bins - 1)
+
+        return x_discrete.to(torch.uint8)  # Convert to uint8 for compatibility with image formats
+
+
 
 def show_image(frame, image_number, scale_factor=5):
     if isinstance(frame, torch.Tensor):
@@ -189,5 +208,3 @@ def show_image(frame, image_number, scale_factor=5):
     if cv2.waitKey(10) & 0xFF == ord('q'):
         cv2.destroyAllWindows()
         raise KeyboardInterrupt("Visualization interrupted by user.")
-
-
