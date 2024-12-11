@@ -122,6 +122,7 @@ class Trainer(nn.Module):
                 best_model_loss = avg_val_loss
                 torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
                 print(f"Best model loss: {best_model_loss}\nsaved to: {self.config.MODEL_OUTPUT_PATH}")
+<<<<<<< Updated upstream
 
             print(f"\n{'='*50}")
             print(f"Epoch [{epoch+1}/{num_epochs}]")
@@ -131,6 +132,10 @@ class Trainer(nn.Module):
                 print(f"Best model loss: {best_model_loss:.6f}")
                 print(f"Saved to: {self.config.MODEL_OUTPUT_PATH}")
             print(f"{'='*50}\n")
+=======
+                
+            print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {avg_loss:.4f}")
+>>>>>>> Stashed changes
 
             # log losses to wandb
             if self.use_wandb and WANDB_AVAILABLE:
@@ -141,6 +146,10 @@ class Trainer(nn.Module):
                 })
 
         torch.save(self.unet.state_dict(), self.config.MODEL_OUTPUT_PATH)
+<<<<<<< Updated upstream
         if self.use_wandb and WANDB_AVAILABLE:
             wandb.save(self.config.MODEL_OUTPUT_PATH)
             wandb.finish()
+=======
+      
+>>>>>>> Stashed changes

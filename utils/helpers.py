@@ -43,6 +43,7 @@ def load_model(device, model_path="model_serialzed"):
     return model
 
 
+<<<<<<< Updated upstream
 def initialize_image(size=(28, 28)):
 
         SIZE = torch.zeros(size)
@@ -51,6 +52,14 @@ def initialize_image(size=(28, 28)):
 
         return x_t
 
+=======
+def initialize_image(size=(28, 28), channels=3):
+    
+    SIZE = (channels, *size)  # This creates a tuple like (3, 28, 28) for RGB images
+    x_t = torch.randn(SIZE)   # Use torch.randn() to create a tensor with the specified size
+    return x_t
+    
+>>>>>>> Stashed changes
 
 def generate_single_image(image_idx, model, sampler, x_t):
  

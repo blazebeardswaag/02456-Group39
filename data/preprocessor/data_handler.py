@@ -34,7 +34,12 @@ def load_MNIST_dataset(batch_size: int):
     return train_loader
 
 
+<<<<<<< Updated upstream
 def load_CIFAR_dataset(batch_size: int, train: bool):
+=======
+
+def load_CIFAR10_dataset(batch_size: int):
+>>>>>>> Stashed changes
     transform = get_transform_cifar()
     train_dataset = datasets.CIFAR10(root='./data', train=train, download=True, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)

@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import torch.optim as optim 
 from torch.utils.data import DataLoader, TensorDataset
-from models.unet import ScoreNetwork0 as UNet
+from models.unet_borrowed import Unet 
 from sampler.sampler import Sampler
 from trainer.trainer import Trainer
 from configs.config import Config
@@ -24,12 +24,27 @@ with context_manager(
     device=torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 ) as config:
     
+    config_model =  {
+        "im_channels": 3,
+        "im_size": 32,
+        "down_channels": [32, 64, 128, 256],
+        "mid_channels": [256, 256, 128],
+        "down_sample": [True, True, False],
+        "time_emb_dim": 128,
+        "num_down_layers": 2,
+        "num_mid_layers": 2,
+        "num_up_layers": 2,
+        "num_heads": 4,
+    }
+
+
+    
     print("loading data")
     train_loader = load_MNIST_dataset(config.batch_size, train=True)
     val_loader = load_MNIST_dataset(config.batch_size, train=False)
     print("sampling data")
     sampler = Sampler(config, config.batch_size)
-    unet_model = UNet().to(config.device)
+    unet_model = Unet(config_model).to(config.device)
     print(f"Model device: {next(unet_model.parameters()).device}")
     image_generator = ImageGenerator(sampler, config.device)
     trainer = Trainer(unet=unet_model, config=config, sampler=sampler, image_generator=image_generator)

@@ -38,6 +38,7 @@ class ImageGenerator:
         eps = eps.to(self.device)
         try:
             x_t_plus_one = torch.sqrt(alpha_bar_t) * x_t + torch.sqrt(1 - alpha_bar_t) * eps
+
         except Exception as e:
             print(f"Error: {e}")
             print(f"size of alpha_bar_t : {alpha_bar_t.shape}")

@@ -12,7 +12,11 @@
     "device": "cpu",
     "training_losses": [],
     "experiment_name": "mnist_training",
+<<<<<<< Updated upstream
     "timestamp": "20241210_180816",
+=======
+    "timestamp": "20241211_002012",
+>>>>>>> Stashed changes
     "patience": 5,
     "min_delta": 0.01,
     "monitor": "loss",
