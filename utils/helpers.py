@@ -247,7 +247,7 @@ def process_timestep(x_t: torch.Tensor, t: int, model, sampler, image_gen, num_i
         t_tensor = torch.tensor([t], dtype=torch.long).to(x_t.device)
     else:
        t_tensor = torch.tensor([t], dtype=torch.float).to(x_t.device)
-       t_tensor = t_tensor.view(num_images)  # Shape: [batch_size]
+       t_tensor = t_tensor.view(num_images, 1, 1, 1)  # Shape: [batch_size, 1, 1, 1]
     
     # Reshape for model input
     if rgb:
