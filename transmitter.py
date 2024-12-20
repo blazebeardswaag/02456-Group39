@@ -62,7 +62,7 @@ class Receiver:
         self.image_gen = ImageGenerator(self.sampler)
 
     async def receive(self, x_t, t):
-        x_t = self.sample_one_step(x_t, t)
+        x_t = self.process_timestep(x_t, t)
         return x_t
 
     def sample_one_step(self, x_t, t):

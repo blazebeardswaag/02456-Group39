@@ -4,6 +4,7 @@ from torchvision import datasets, transforms
 from torch.utils import data
 from PIL import Image
 import cv2
+import os 
 from models.unet import ScoreNetwork0 
 from sampler.image_generator import ImageGenerator
 from sampler.sampler import Sampler 
@@ -11,6 +12,11 @@ from configs.config import Config
 from utils.image_saver import ImageSaver
 from configs.config_manager import context_manager
 import matplotlib.pyplot as plt
+from sampler.image_generator import ImageGenerator
+from sampler.sampler import Sampler
+from configs.config_manager import context_manager
+from display.grid_display import ImageManager
+from models.unet import ScoreNetwork0
 
 
 def generate_one_step(model, sampler, t, image_generator, x_t ):
@@ -35,7 +41,7 @@ def generate_one_step(model, sampler, t, image_generator, x_t ):
             return x_image
 
 
-def load_model(device, model_path="model_serialzed"):
+def load_model(device, model_path):
 
     model = ScoreNetwork0().to(device)
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -182,3 +188,189 @@ def show_image(frame, image_number, scale_factor=5):
         raise KeyboardInterrupt("Visualization interrupted by user.")
 
 
+
+def save_images(task: str, images: list, timestep: int, rgb: bool = False) -> None:
+   
+    main_dir = f"sampled_images_{task}"
+    os.makedirs(main_dir, exist_ok=True)
+
+    # Save only if timestep <= 50 or if it's a multiple of 10
+    if timestep > 50 and timestep % 10 != 0:
+        return
+
+    # Save each image in its own folder within the main directory
+    for idx, img in enumerate(images):
+        # Create directory for this specific image if it doesn't exist
+        image_dir = os.path.join(main_dir, f"image_{idx}")
+        os.makedirs(image_dir, exist_ok=True)
+        
+        # Convert tensor to PIL Image
+        img = img.cpu().detach()
+        img = (img * 255).to(torch.uint8)
+        
+        # Handle RGB vs grayscale
+        if rgb:
+            img = img.permute(1, 2, 0).numpy() if img.dim() == 3 else img.numpy()
+            mode = 'RGB'
+        else:
+            img = img.numpy()
+            mode = 'L'
+            
+        img = Image.fromarray(img, mode=mode)
+        
+        # Save image with timestep in filename
+        img.save(os.path.join(image_dir, f"step_{timestep:04d}.png"))
+    
+    if timestep % 10 == 0 or timestep <= 50:
+        print(f"Saved images at timestep {timestep}")
+
+
+
+
+############################
+
+
+def initialize_batch(num_images: int, image_size: tuple, rgb: bool = False) -> torch.Tensor:
+    """Initialize a batch of images with appropriate channels."""
+    channels = 3 if rgb else 1
+    batch_size = (num_images, channels, *image_size)  # Changed to include batch dimension first
+    eps = torch.normal(mean=0.0, std=1.0, size=batch_size)
+    return eps
+
+def process_timestep(x_t: torch.Tensor, t: int, model, sampler, image_gen, num_images: int, image_size: tuple, rgb: bool = False) -> torch.Tensor:
+    """Process a single timestep for a batch of images."""
+    channels = 3 if rgb else 1
+    
+    # Create t_tensor and reshape it to match model's expected input
+    if rgb:
+        # For CIFAR: create time tensor as integer
+        t_tensor = torch.tensor([t], dtype=torch.long).to(x_t.device)
+    else:
+        # For MNIST: keep existing behavior
+        t_tensor = torch.tensor([t]).to(x_t.device)
+        t_tensor = t_tensor.unsqueeze(0).expand(num_images, -1)
+    
+    # Reshape for model input
+    if rgb:
+        model_input = x_t  # Keep the 4D shape for CIFAR: [batch, channels, height, width]
+    else:
+        # For MNIST: ensure input is [batch_size, 784]
+        model_input = x_t.view(num_images, -1)
+    
+    print(f"model_input shape: {model_input.shape}")
+    print(f"t_tensor shape: {t_tensor.shape}")
+    
+    eps_theta = model(model_input, t_tensor)
+    
+    # Get diffusion parameters with correct shapes
+    alpha_t = sampler.get_alpha(t_tensor)
+    alpha_bar_t = sampler.get_alpha_bar_t(t_tensor.item())  # Pass as integer for CIFAR
+    beta_t = sampler.linear_beta_scheduler(t)
+    z = torch.randn_like(x_t) if t > 1 else 0
+    
+    # Reshape eps_theta back to image dimensions if needed
+    if not rgb:
+        eps_theta = eps_theta.view(num_images, channels, *image_size)
+    
+    # Reconstruct image
+    x_t = image_gen.reconstruct_image(
+        x_t,
+        eps_theta,
+        t_tensor,
+        alpha_t,
+        alpha_bar_t,
+        beta_t,
+        z
+    )
+    
+    return x_t
+
+def setup_plot(num_images: int) -> tuple:
+    """Setup matplotlib plot for visualization."""
+    fig, axes = plt.subplots(1, num_images, figsize=(num_images * 3, 3))
+    if num_images == 1:
+        axes = [axes]
+    return fig, axes
+
+def update_plot(axes, x_t: torch.Tensor, t: int, rgb: bool = False) -> None:
+    """Update plot with new images."""
+    for idx in range(len(axes)):
+        img = x_t[idx].cpu().detach()
+        axes[idx].clear()
+        
+        if rgb:
+            img = img.permute(1, 2, 0).numpy()
+        else:
+            img = img.numpy()
+            
+        axes[idx].imshow(img, cmap='gray' if not rgb else None)
+        axes[idx].axis('off')
+        axes[idx].set_title(f'Image {idx + 1}')
+    
+    plt.suptitle(f'Timestep {t}')
+    plt.tight_layout()
+    plt.show()
+
+
+def show_diffusion_process(device: str, model, num_images: int, image_size: tuple, rgb: bool = False) -> None:
+    """Shows the diffusion process in real-time using matplotlib."""
+    import matplotlib.pyplot as plt
+    from IPython.display import clear_output, display
+    
+    device = torch.device(device)
+    with context_manager(experiment_name="mnist_generation", device=device) as config:
+        # Setup
+        sampler = Sampler(config, batch_size=num_images, rgb = rgb)        
+        x_t = initialize_batch(num_images, image_size, rgb).to(device)
+        image_gen = ImageGenerator(sampler)
+        
+        # Generation loop
+        total_steps = 1000
+        for t in range(total_steps, 0, -1):
+            x_t = process_timestep(x_t, t, model, sampler, image_gen, num_images, image_size, rgb)
+            
+            # Create new figure for each timestep
+            plt.figure(figsize=(num_images * 3, 3))
+            
+            # Plot each image
+            for idx in range(num_images):
+                plt.subplot(1, num_images, idx + 1)
+                img = x_t[idx].cpu().detach()
+                
+                if rgb:
+                    img = img.permute(1, 2, 0).numpy()  # CHW -> HWC for RGB
+                else:
+                    img = img.squeeze(0).numpy()  # Remove channel dim for grayscale
+                
+                plt.imshow(img, cmap='gray' if not rgb else None)
+                plt.axis('off')
+                plt.title(f'Image {idx + 1}')
+            
+            plt.suptitle(f'Timestep {t}')
+            plt.tight_layout()
+            
+            display(plt.gcf())
+            if t > 1:
+                clear_output(wait=True)
+            plt.close()
+        
+        print("\nGeneration completed.")
+
+
+
+
+def sample_images(device: str, model, num_images: int, rgb: bool = False) -> None:
+    """Generates and saves images without visualization."""
+    device = torch.device(device)
+    with context_manager(experiment_name="mnist_generation", device=device) as config:
+        sampler = Sampler(config, batch_size=num_images)        
+        x_t = initialize_batch(num_images, device=device)
+        image_gen = ImageGenerator(sampler)
+        
+        total_steps = 1000
+        for t in range(total_steps, 0, -1):
+            print(f"Processing timestep {t}", end='\r')
+            x_t = process_timestep(x_t, t, model, sampler, image_gen, num_images)
+            save_images("mnist", [x.clone() for x in x_t], t, rgb)
+        
+        print("\nGeneration completed.")

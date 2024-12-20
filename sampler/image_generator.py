@@ -11,13 +11,22 @@ class ImageGenerator:
         self.device = device
 
     def reconstruct_image(self, x_t, predicted_noise, t, alpha_t, alpha_bar_t, beta_t, z):
-        alpha_t = self.sampler.get_alpha(t)
-        std_t = beta_t
+        """
+        x_t: (B, C, H, W) where:
+            - MNIST: C=1, H=W=28
+            - CIFAR: C=3, H=W=32
+        """
+        # Ensure all tensors have correct dimensions
+        alpha_t = alpha_t.view(-1, 1, 1, 1)  # (B, 1, 1, 1)
+        alpha_bar_t = alpha_bar_t.view(-1, 1, 1, 1)  # (B, 1, 1, 1)
+        beta_t = beta_t.view(-1, 1, 1, 1) if torch.is_tensor(beta_t) else beta_t  # Handle scalar beta_t
+        
         x_t_minus_one = (
             1 / torch.sqrt(alpha_t)
         ) * (
             x_t - ((1 - alpha_t) / torch.sqrt(1 - alpha_bar_t)) * predicted_noise
         ) + torch.sqrt(beta_t) * z
+        
         return x_t_minus_one
 
     def sample_img_at_t(self, step, x_t, alpha_bar_t, eps):
