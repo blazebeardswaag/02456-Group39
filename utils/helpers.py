@@ -246,9 +246,8 @@ def process_timestep(x_t: torch.Tensor, t: int, model, sampler, image_gen, num_i
         # For CIFAR: create time tensor as integer
         t_tensor = torch.tensor([t], dtype=torch.long).to(x_t.device)
     else:
-        # For MNIST: keep existing behavior
-        t_tensor = torch.tensor([t]).to(x_t.device)
-        t_tensor = t_tensor.unsqueeze(0).expand(num_images, -1)
+       t_tensor = torch.tensor([t], dtype=torch.float).to(x_t.device)
+       t_tensor = t_tensor.view(num_images)  # Shape: [batch_size]
     
     # Reshape for model input
     if rgb:
