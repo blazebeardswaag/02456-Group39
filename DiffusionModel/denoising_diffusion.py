@@ -1,4 +1,4 @@
-from trainer import Trainer 
+from infra import Trainer 
 from typing import Optional # Lets figure out first what types we use 
 import torch.nn as nn 
 import torch

@@ -1,7 +1,7 @@
 import torch.nn as nn 
 import torch 
-from utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
-from sampler.sampler import Sampler 
+from ..utils.helpers_model import sample_epsilon, get_alpha, linear_beta_schedueler, cosine_beta_scheduler, get_alpha_bar_t
+from ..sampler import Sampler 
 
 
 class ImageGenerator:

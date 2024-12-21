@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from configs.config import Config 
+from .config import Config 
 
 
 @contextmanager
