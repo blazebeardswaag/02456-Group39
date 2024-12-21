@@ -26,7 +26,7 @@ model = DenoisingDiffusion(task="mnist", device="cuda")
 model.sample_images(num_images=100, output_dir="output/mnist_samples")
 ```
 
-2. Calculate FID score:
+2. Calculate MNIST FID score:
 ```python
 # Run FID calculation script
 python -m eval.eval.FID-CALC-MNIST.PY
