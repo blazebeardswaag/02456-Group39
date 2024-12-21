@@ -1,22 +1,17 @@
 import torch 
+import matplotlib.pyplot as plt
 import numpy as np
 from torchvision import datasets, transforms
 from torch.utils import data
 from PIL import Image
-import matplotlib.pyplot as plt
 import cv2
 import os 
 from ..models import ScoreNetwork0 
-#from ..sampler import ImageGenerator, Sampler
 from ..configs.config import Config 
 from ..utils.image_saver import ImageSaver
 from ..configs.config_manager import context_manager
-from ..sampler import ImageGenerator
+from .diffusion_utils import sample_epsilon, get_alpha, linear_beta_schedueler
 from ..sampler import Sampler
-from configs.config_manager import context_manager
-from display.grid_display import ImageManager
-from ..models import ScoreNetwork0
-
 
 def generate_one_step(model, sampler, t, image_generator, x_t ):
             t_tensor = torch.tensor([t]).unsqueeze(0)
@@ -229,43 +224,33 @@ def save_images(task: str, images: list, timestep: int, rgb: bool = False) -> No
 ############################
 
 
-def initialize_batch(num_images: int, image_size: tuple, rgb: bool = False) -> torch.Tensor:
-    """Initialize a batch of images with appropriate channels."""
+def initialize_batch(num_images, image_size, rgb=False):
     channels = 3 if rgb else 1
-    batch_size = (num_images, channels, *image_size)  # Changed to include batch dimension first
-    eps = torch.normal(mean=0.0, std=1.0, size=batch_size)
-    return eps
+    return torch.randn(num_images, channels, *image_size)
 
-def process_timestep(x_t: torch.Tensor, t: int, model, sampler, image_gen, num_images: int, image_size: tuple, rgb: bool = False) -> torch.Tensor:
-    """Process a single timestep for a batch of images."""
+def process_timestep(x_t, t, model, sampler, image_gen, num_images, image_size, rgb):
     channels = 3 if rgb else 1
-    device = x_t.device  # Get device from input tensor
-    
-    # Create t_tensor and move to correct device
+    device = x_t.device 
     if rgb:
         t_tensor = torch.tensor([t], dtype=torch.long).to(device)
     else:
         t_tensor = torch.full((x_t.size(0), 1), t, dtype=torch.float32, device=device)
 
-    # Reshape for model input
     if rgb:
-        model_input = x_t  # Keep the 4D shape for CIFAR
+        model_input = x_t  
     else:
         model_input = x_t.view(x_t.size(0), -1)
 
     eps_theta = model(model_input, t_tensor)
     
-    # Get diffusion parameters and ensure they're on the correct device
     alpha_t = sampler.get_alpha(t_tensor).to(device)
     alpha_bar_t = sampler.get_alpha_bar_t(t_tensor).to(device)
     beta_t = sampler.linear_beta_scheduler(t).to(device)
     z = torch.randn_like(x_t).to(device) if t > 1 else 0
     
-    # Reshape eps_theta back to image dimensions if needed
     if not rgb:
         eps_theta = eps_theta.view(num_images, channels, *image_size)
     
-    # Reconstruct image
     x_t = image_gen.reconstruct_image(
         x_t,
         eps_theta,
@@ -305,19 +290,19 @@ def update_plot(axes, x_t: torch.Tensor, t: int, rgb: bool = False) -> None:
     plt.show()
 
 
-def show_diffusion_process(device: str, model, num_images: int, image_size: tuple, rgb: bool = False) -> None:
-    """Shows the diffusion process in real-time using matplotlib."""
+def show_diffusion_process(device, model, num_images: int, image_size: tuple, rgb: bool = False) -> None:
     import matplotlib.pyplot as plt
     from IPython.display import clear_output, display
+    from ..sampler import ImageGenerator
     import numpy as np
     
-    device = torch.device(device)
-    model.to(device)
         
-    # Setup the figure once with minimal size
-    fig, axes = plt.subplots(1, num_images, figsize=(num_images * 3, 3))
-    if num_images == 1:
-        axes = [axes]
+    device = torch.device(device)
+    model = model.to(device)
+    n_cols = int(np.ceil(np.sqrt(num_images)))
+    n_rows = int(np.ceil(num_images / n_cols))
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(n_cols * 1.15, n_rows * 1.25))  # Adjusted size
+    axes = axes.flatten() if num_images > 1 else [axes]
     
     # Normalization parameters for CIFAR-like datasets
     mean = torch.tensor([0.4914, 0.4822, 0.4465], device=device) if rgb else torch.tensor([0.5], device=device)
@@ -327,7 +312,7 @@ def show_diffusion_process(device: str, model, num_images: int, image_size: tupl
         # Setup
         sampler = Sampler(config, batch_size=num_images, rgb=rgb)        
         x_t = initialize_batch(num_images, image_size, rgb).to(device)
-        image_gen = ImageGenerator(sampler)
+        image_gen = ImageGenerator(sampler, device)
         
         # Show 8 key timesteps
         key_timesteps = [1000, 875, 750, 625, 500, 375, 250, 125, 1]
@@ -344,15 +329,15 @@ def show_diffusion_process(device: str, model, num_images: int, image_size: tupl
                     # Update plots
                     for idx, ax in enumerate(axes):
                         ax.clear()
-                        img = imgs[idx]
-                        
-                        if rgb:
-                            img = img.transpose(1, 2, 0)  # CHW -> HWC
-                        else:
-                            img = img.squeeze(0)
-                        
-                        img = np.clip(img, 0, 1)  # Clip to [0, 1] range
-                        ax.imshow(img, cmap='gray' if not rgb else None)
+                        if idx < num_images:
+                            img = imgs[idx]
+                            if rgb:
+                                img = img.transpose(1, 2, 0)  # CHW -> HWC
+                            else:
+                                img = img.squeeze(0)
+                            
+                            img = np.clip(img, 0, 1)  # Clip to [0, 1] range
+                            ax.imshow(img, cmap='gray' if not rgb else None)
                         ax.axis('off')
                     
                     plt.suptitle(f'Timestep {t}')
@@ -364,24 +349,26 @@ def show_diffusion_process(device: str, model, num_images: int, image_size: tupl
     
     plt.close()
 
-def sample_images(device, model, num_images: int, image_size: tuple, rgb: bool = False, output:str = None) -> None:
+def sample_images(device, model, num_images: int, image_size: tuple, rgb: bool = False, output: str = None) -> None:
     """
     Sample images using the same logic as show_diffusion_process.
     Saves images individually in task-specific folders.
     """
-    import pathlib 
-
-    # Ensure model is on the correct device
+    from ..sampler import ImageGenerator  
+    
+    if not torch.cuda.is_available() and device == "cuda":
+        print("CUDA not available, using CPU instead")
+        device = "cpu"
+    
+    device = torch.device(device)
     model = model.to(device)
     
     # Create output directory
     task = "cifar" if rgb else "mnist"
-    if output is not None:
-        output_dir = f"generated_images/{output}"
-    else:
-        output_dir = f"generated_images/{task}"
+    output_dir = f"generated_images/{output if output else task}"
+    os.makedirs(output_dir, exist_ok=True)
     
-    # Move tensors to the specified device
+    # Standard normalization parameters
     mean = torch.tensor([0.4914, 0.4822, 0.4465], device=device) if rgb else torch.tensor([0.5], device=device)
     std = torch.tensor([0.2470, 0.2435, 0.2616], device=device) if rgb else torch.tensor([0.5], device=device)
     
@@ -389,7 +376,7 @@ def sample_images(device, model, num_images: int, image_size: tuple, rgb: bool =
         # Setup
         sampler = Sampler(config, batch_size=num_images, rgb=rgb)        
         x_t = initialize_batch(num_images, image_size, rgb).to(device)
-        image_gen = ImageGenerator(sampler)
+        image_gen = ImageGenerator(sampler, device)
         
         # Sample using the same process as show_diffusion
         with torch.no_grad():
@@ -399,13 +386,9 @@ def sample_images(device, model, num_images: int, image_size: tuple, rgb: bool =
         # Save individual images
         for i in range(num_images):
             img = x_t[i]
-            
-            # Denormalize the image using mean and std
             if rgb:
-                img = img * std[:, None, None] + mean[:, None, None]
                 img = img.permute(1, 2, 0)
             else:
-                img = img * std + mean
                 img = img.squeeze(0)
             
             # Convert to numpy and ensure proper range [0, 255]
@@ -413,14 +396,8 @@ def sample_images(device, model, num_images: int, image_size: tuple, rgb: bool =
             img = (img * 255).clip(0, 255).astype(np.uint8)
             
             # Save image
-
-            num_idx = len(list(pathlib.Path(output_dir).glob("*")))
-            os.makedirs(output_dir, exist_ok=True)
-            
-            img_path = os.path.join(output_dir, f'sample_{num_idx+i+1}.png')
-            print(f"Attempting to save image to: {img_path}")  # Debug print
+            img_path = os.path.join(output_dir, f'sample_{i+1}.png')
             if rgb:
                 Image.fromarray(img).save(img_path)
             else:
                 Image.fromarray(img, mode='L').save(img_path)
-            print(f"Image saved successfully")  # Debug print

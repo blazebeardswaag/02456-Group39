@@ -4,13 +4,12 @@ import torch.nn as nn
 import torch
 import torch.optim as optim 
 from torch.utils.data import DataLoader, TensorDataset
-from models.unet import ScoreNetwork0 
-from models.unet_borrowed import Unet
-from sampler.sampler import Sampler
-from sampler.image_generator import ImageGenerator
-from utils.image_saver import ImageSaver
+from infra import ScoreNetwork0, Unet
+from infra.sampler import Sampler
+from infra.sampler import ImageGenerator
+from infra.utils.image_saver import ImageSaver
 import os
-from utils.helpers import sample_images, save_images, show_diffusion_process
+from infra.utils.helpers import sample_images, save_images, show_diffusion_process
 
 # unet, config, sweep_config, sampler, image_generator
 
@@ -65,6 +64,4 @@ class DenoisingDiffusion:
     def train(self, channels: int): 
         assert channels in [2,3], "Please choose 2 for greyscale or 3 channels for rgb."
         return 
-    
-
     

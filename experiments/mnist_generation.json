@@ -1,0 +1,16 @@
+{
+    "DIM": [
+        28,
+        28
+    ],
+    "MODEL_OUTPUT_PATH": "./model_serialzed",
+    "use_wandb": null,
+    "device": "cpu",
+    "training_losses": [],
+    "experiment_name": "mnist_generation",
+    "timestamp": "20241221_163827",
+    "patience": 5,
+    "min_delta": 0.01,
+    "monitor": "loss",
+    "mode": "min"
+}

@@ -12,3 +12,4 @@ data/cifar-10-python.tar.gz
 gaussian_noise_images/
 mnist_images/ 
 infra/data/cifar-10-python.tar.gz
+testing
