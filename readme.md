@@ -1,5 +1,22 @@
 # Diffusion Models as Score Matching
 
+## Branches
+
+###
+**main**: This branch contains scripts to sample our CIFAR-10 and MNIST using the instructions below. The models are included in main branch.
+
+### MNIST
+**patience-10**: testrun.py trains the mnist model with a patience of 10 through several combinations for a total of 48 different runs.
+
+**patience-5**: identical to patience-10, except patience = 5.
+
+### CIFAR-10
+**new-net**: Trains cifar using gpu parallelisation, normalizes tensors for faster training among other tricks to speed up the training. testrun.py initates the training.
+
+**modal**: same network as net-net with slightly lower learning rate using modal.com's framework to train.
+
+all other branches are irrelavant to training or sampling from our ddpm model
+
 ## Setup
 
 1. Create Python environment:
