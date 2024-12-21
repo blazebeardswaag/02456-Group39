@@ -11,20 +11,14 @@ class Sampler:
         self.scheduler_type = "linear"
 
     def get_alpha_bar_t(self, t_tensor):
-        if self.is_rgb:
-            t = t_tensor if isinstance(t_tensor, int) else t_tensor.item()
-            alphas = torch.tensor([self.get_alpha(t_i) for t_i in range(1, t + 1)], dtype=torch.float32)
-            alpha_bar_t = alphas.prod()
-            return alpha_bar_t
-        else:
-            batch_size = t_tensor.shape[0]
-            alpha_bar_results = []
-            for i in range(batch_size):
-                t = t_tensor[i].item()
-                alphas = torch.tensor([self.get_alpha(t_i) for t_i in range(1, t + 1)], dtype=torch.float32)
-                alpha_bar_t = alphas.prod()
-                alpha_bar_results.append(alpha_bar_t)
-            return torch.stack(alpha_bar_results)
+        t = int(t_tensor[0].item())
+
+        alphas = torch.tensor([self.get_alpha(t_i) for t_i in range(1, t + 1)], dtype=torch.float32)
+        alpha_bar_t = alphas.prod()
+
+        alpha_bar_results = torch.full((t_tensor.size(0),), alpha_bar_t, dtype=torch.float32)
+
+        return alpha_bar_results
 
     def get_alpha(self, t_tensor):
         beta_t = self.linear_beta_scheduler(t_tensor)
